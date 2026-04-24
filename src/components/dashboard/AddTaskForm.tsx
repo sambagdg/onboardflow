@@ -1,7 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { addTask } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function AddTaskForm({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
@@ -15,17 +19,15 @@ export function AddTaskForm({ projectId }: { projectId: string }) {
 
   if (!open) {
     return (
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 text-sm text-slate-500 hover:text-sky-400 transition-colors group"
+        className="gap-1.5 text-muted-foreground hover:text-foreground w-full justify-start px-0"
       >
-        <span className="h-5 w-5 rounded-md border border-[#1A2840] bg-[#0A1020] flex items-center justify-center group-hover:border-sky-400/30 group-hover:bg-sky-400/5 transition-colors">
-          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-            <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </span>
+        <Plus className="h-4 w-4" />
         Ajouter une tâche
-      </button>
+      </Button>
     );
   }
 
@@ -33,35 +35,34 @@ export function AddTaskForm({ projectId }: { projectId: string }) {
     <form ref={formRef} action={handleSubmit} className="flex flex-col gap-3 pt-1">
       <input type="hidden" name="projectId" value={projectId} />
 
-      <input
-        name="title"
-        type="text"
-        placeholder="Ex : Envoyer le logo en SVG"
-        required
-        autoFocus
-        className="rounded-xl border border-[#1A2840] bg-[#06090F] px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-sky-400/50 focus:ring-1 focus:ring-sky-400/20 transition-colors"
-      />
-      <input
-        name="description"
-        type="text"
-        placeholder="Description optionnelle…"
-        className="rounded-xl border border-[#1A2840] bg-[#06090F] px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-sky-400/50 focus:ring-1 focus:ring-sky-400/20 transition-colors"
-      />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="task-title">Tâche</Label>
+        <Input
+          id="task-title"
+          name="title"
+          placeholder="Ex : Envoyer le logo en SVG"
+          required
+          autoFocus
+        />
+      </div>
 
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          className="rounded-xl bg-sky-400 px-4 py-2 text-sm font-semibold text-[#06090F] hover:bg-sky-300 transition-all hover:shadow-[0_0_14px_rgba(56,189,248,0.3)]"
-        >
-          Ajouter
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-xl border border-[#1A2840] px-4 py-2 text-sm text-slate-400 hover:border-[#2A3F60] hover:text-slate-200 transition-colors"
-        >
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="task-desc">
+          Description{" "}
+          <span className="font-normal text-muted-foreground">(optionnel)</span>
+        </Label>
+        <Input
+          id="task-desc"
+          name="description"
+          placeholder="Instructions pour le client…"
+        />
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <Button type="submit" size="sm">Ajouter</Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
           Annuler
-        </button>
+        </Button>
       </div>
     </form>
   );

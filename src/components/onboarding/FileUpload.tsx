@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Upload, FileText, ExternalLink, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Submission } from "@/types";
 
 export function FileUpload({
@@ -47,59 +49,52 @@ export function FileUpload({
     if (e.dataTransfer.files) uploadFiles(e.dataTransfer.files);
   }
 
-  function getFileIcon(name: string) {
-    const ext = name.split(".").pop()?.toLowerCase();
-    if (["pdf"].includes(ext ?? "")) return "📄";
-    if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext ?? "")) return "🖼️";
-    if (["zip", "rar", "7z"].includes(ext ?? "")) return "🗜️";
-    return "📎";
-  }
-
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {/* Drop zone */}
       <div
-        className={`relative rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-200 ${
+        className={cn(
+          "relative rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-200",
           dragOver
-            ? "border-sky-400/60 bg-sky-400/5"
+            ? "border-primary/60 bg-primary/5"
             : uploading
-            ? "border-[#1A2840] bg-[#0D1424] opacity-70"
-            : "border-[#1A2840] bg-[#0D1424] hover:border-sky-400/30 hover:bg-sky-400/[0.02]"
-        }`}
+            ? "border-border bg-accent/30 opacity-70 cursor-wait"
+            : "border-border bg-card hover:border-primary/40 hover:bg-accent/20"
+        )}
         onClick={() => !uploading && inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
       >
         <div className="flex flex-col items-center gap-3">
-          {uploading ? (
-            <>
-              <div className="h-10 w-10 rounded-xl border border-sky-400/20 bg-sky-400/10 flex items-center justify-center">
-                <svg className="h-5 w-5 text-sky-400 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-sky-400">Envoi en cours…</p>
-            </>
-          ) : (
-            <>
-              <div className={`h-10 w-10 rounded-xl border flex items-center justify-center transition-colors ${
-                dragOver ? "border-sky-400/40 bg-sky-400/10" : "border-[#1A2840] bg-[#0A1020]"
-              }`}>
-                <svg className={`h-5 w-5 transition-colors ${dragOver ? "text-sky-400" : "text-slate-500"}`} viewBox="0 0 20 20" fill="none">
-                  <path d="M10 13V7m0 0L7 10m3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M3 14v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-300 mb-0.5">
-                  {dragOver ? "Relâchez pour envoyer" : "Déposez vos fichiers ici"}
-                </p>
-                <p className="text-xs text-slate-500">ou cliquez pour parcourir — PDF, PNG, JPG, ZIP</p>
-              </div>
-            </>
-          )}
+          <div
+            className={cn(
+              "flex h-12 w-12 items-center justify-center rounded-xl border transition-colors",
+              dragOver
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-background text-muted-foreground"
+            )}
+          >
+            {uploading ? (
+              <Loader2 className="h-5 w-5 text-primary animate-spin" />
+            ) : (
+              <Upload className="h-5 w-5" />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium">
+              {uploading
+                ? "Envoi en cours…"
+                : dragOver
+                ? "Relâchez pour envoyer"
+                : "Déposez vos fichiers ici"}
+            </p>
+            {!uploading && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                ou cliquez pour parcourir — PDF, PNG, JPG, ZIP
+              </p>
+            )}
+          </div>
         </div>
 
         <input
@@ -115,28 +110,26 @@ export function FileUpload({
 
       {/* File list */}
       {submissions.length > 0 && (
-        <div className="rounded-xl border border-[#1A2840] bg-[#0D1424] overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-[#1A2840]">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="rounded-lg border overflow-hidden">
+          <div className="px-4 py-2 border-b bg-muted/50">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Fichiers envoyés ({submissions.length})
             </p>
           </div>
-          <ul className="divide-y divide-[#1A2840]">
+          <ul className="divide-y">
             {submissions.map((s) => (
               <li key={s.id}>
                 <a
                   href={s.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#0A1020] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors"
                 >
-                  <span className="text-lg shrink-0">{getFileIcon(s.file_name)}</span>
-                  <span className="text-sm text-slate-300 truncate flex-1 hover:text-sky-400 transition-colors">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-sm truncate flex-1 hover:text-primary transition-colors">
                     {s.file_name}
                   </span>
-                  <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 14 14" fill="none">
-                    <path d="M2 12L12 2M12 2H6M12 2v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                 </a>
               </li>
             ))}

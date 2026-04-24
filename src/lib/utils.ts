@@ -1,16 +1,23 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .replace(/^-+|-+$/g, "");
 }
 
-export function formatDate(date: string): string {
+export function formatDate(dateString: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(new Date(dateString));
 }
