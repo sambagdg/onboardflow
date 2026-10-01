@@ -31,7 +31,7 @@ export default async function NewProjectPage({
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Nouvel espace client</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Créez un espace d'onboarding dédié avec checklist et lien partageable.
+          Créez un espace d&apos;onboarding dédié avec checklist et lien partageable.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export default async function NewProjectPage({
             </div>
 
             <div className="flex items-center gap-2 pt-1">
-              <Button type="submit">Créer l'espace</Button>
+              <Button type="submit">Créer l&apos;espace</Button>
               <Link href="/dashboard" className={buttonVariants({ variant: "outline" })}>
                 Annuler
               </Link>

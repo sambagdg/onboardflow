@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // node_modules déplacé hors iCloud (symlink node_modules -> node_modules.nosync)
+    "node_modules.nosync/**",
   ]),
 ]);
 

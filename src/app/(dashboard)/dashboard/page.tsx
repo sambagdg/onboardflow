@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { buttonVariants } from "@/components/ui/button";
 import { Users, TrendingUp, FileText } from "lucide-react";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import type { Project } from "@/types";
 
 export default async function DashboardPage() {
@@ -47,7 +46,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Mes clients</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {projects.length} espace{projects.length !== 1 ? "s" : ""} d'onboarding
+            {projects.length} espace{projects.length !== 1 ? "s" : ""} d&apos;onboarding
           </p>
         </div>
         <NewProjectDialog />
@@ -65,7 +64,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-primary">{activeCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">en cours d'onboarding</p>
+              <p className="text-xs text-muted-foreground mt-0.5">en cours d&apos;onboarding</p>
             </CardContent>
           </Card>
 
@@ -106,9 +105,9 @@ export default async function DashboardPage() {
               <Users className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold mb-1">Aucun client pour l'instant</p>
+              <p className="font-semibold mb-1">Aucun client pour l&apos;instant</p>
               <p className="text-sm text-muted-foreground">
-                Créez votre premier espace d'onboarding pour démarrer.
+                Créez votre premier espace d&apos;onboarding pour démarrer.
               </p>
             </div>
             <NewProjectDialog />

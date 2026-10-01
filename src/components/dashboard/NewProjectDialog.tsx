@@ -59,7 +59,7 @@ export function NewProjectDialog() {
             >
               Annuler
             </Button>
-            <Button type="submit">Créer l'espace</Button>
+            <Button type="submit">Créer l&apos;espace</Button>
           </div>
         </form>
       </DialogContent>
