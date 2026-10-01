@@ -69,7 +69,7 @@ export default async function OnboardingPage({
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            <span className="text-xs font-medium text-primary">Espace d'onboarding</span>
+            <span className="text-xs font-medium text-primary">Espace d&apos;onboarding</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">{project.client_name}</h1>
           {project.description && (

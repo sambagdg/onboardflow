@@ -124,7 +124,7 @@ export default function LandingPage() {
             </Badge>
 
             <h1 className="text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl mb-6 leading-[1.05]">
-              L'onboarding client{" "}
+              L&apos;onboarding client{" "}
               <span className="text-primary">sans friction</span>
             </h1>
 
@@ -384,7 +384,7 @@ export default function LandingPage() {
                 Prêt à transformer votre onboarding ?
               </h2>
               <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-                Rejoignez 200+ agences qui ont dit adieu aux emails d'onboarding.
+                Rejoignez 200+ agences qui ont dit adieu aux emails d&apos;onboarding.
                 Gratuit pour commencer, sans carte bancaire requise.
               </p>
               <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "gap-2 px-8")}>

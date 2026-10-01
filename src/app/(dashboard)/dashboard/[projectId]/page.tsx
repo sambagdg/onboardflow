@@ -136,7 +136,7 @@ export default async function ProjectDetailPage({
           {submissions.length === 0 ? (
             <div className="rounded-lg border border-dashed py-10 text-center">
               <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Aucun fichier reçu pour l'instant.</p>
+              <p className="text-sm text-muted-foreground">Aucun fichier reçu pour l&apos;instant.</p>
             </div>
           ) : (
             <ul className="flex flex-col divide-y rounded-lg border overflow-hidden">
