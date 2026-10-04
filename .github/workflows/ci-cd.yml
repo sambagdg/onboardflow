@@ -1,0 +1,124 @@
+# .github/workflows/ci-cd.yml
+name: CI/CD Pipeline — OnboardFlow
+
+# Quand le workflow se déclenche
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+# Le token GitHub n'a que le droit de lire le code
+permissions:
+  contents: read
+
+# Si tu pousses 2 fois de suite, la 1re exécution est annulée
+# (sauf sur main, pour ne jamais couper un déploiement en cours)
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # ─── JOB 1 : Qualité ────────────────────────────────────────
+  test:
+    # ⚠️ Ce nom doit correspondre au check requis dans les règles de main
+    name: Lint, typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Installer les dépendances exactement comme dans package-lock.json
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Seulement les dépendances qui partent en prod
+      - name: Security audit
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Tests
+        run: npm test --if-present
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+  # ─── JOB 2 : Docker build (validation) ──────────────────────
+  docker-build:
+    name: 🐳 Docker Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t onboardflow:${{ github.sha }} .
+
+  # ─── JOB 3 : Deploy Vercel (push sur main uniquement) ───────
+  deploy:
+    name: 🚀 Deploy to Vercel
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Un seul déploiement prod à la fois, sans jamais en annuler un
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    # L'URL du déploiement, transmise au job healthcheck
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      # Récupérer la config et les variables d'env du projet Vercel
+      - name: Pull Vercel config
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Envoyer le build déjà prêt ; la commande attend qu'il soit en ligne
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### 🚀 Déployé sur $url" >> "$GITHUB_STEP_SUMMARY"
+
+  # ─── JOB 4 : Healthcheck ────────────────────────────────────
+  healthcheck:
+    name: ✅ Healthcheck
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      # On teste le domaine de prod (variable PROD_URL) : l'URL unique du
+      # déploiement est protégée par Vercel par défaut et renverrait 401.
+      # Réessaie 5 fois (toutes les 5 s) avant de déclarer l'échec
+      - name: Vérifier que l'app répond
+        run: |
+          URL="${{ vars.PROD_URL || needs.deploy.outputs.url }}/api/health"
+          echo "Test de $URL"
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$URL"
+          echo
+          echo "✅ App opérationnelle"
