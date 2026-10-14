@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatDate, cn } from "@/lib/utils";
+import { getAppUrl } from "@/lib/app-url";
 import type { Project } from "@/types";
 
 export default async function ProjectDetailPage({
@@ -35,7 +36,7 @@ export default async function ProjectDetailPage({
   const percent = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
   const isComplete = tasks.length > 0 && percent === 100;
 
-  const clientUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/onboarding/${project.slug}`;
+  const clientUrl = `${await getAppUrl()}/onboarding/${project.slug}`;
 
   return (
     <div className="flex flex-col gap-6">

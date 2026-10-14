@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Users, TrendingUp, FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { getAppUrl } from "@/lib/app-url";
 import type { Project } from "@/types";
 
 export default async function DashboardPage() {
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
     return tasks.length > 0 && tasks.some((t) => !t.completed);
   }).length;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getAppUrl();
 
   return (
     <div className="flex flex-col gap-8">
