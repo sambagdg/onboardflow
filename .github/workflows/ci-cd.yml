@@ -65,6 +65,39 @@ jobs:
       - name: Build Docker image
         run: docker build -t onboardflow:${{ github.sha }} .
 
+  # ─── JOB 2b : Deploy Preview (push sur dev uniquement) ──────
+  deploy-preview:
+    name: 🔍 Deploy Preview
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      # Variables de l'environnement Preview (pas Production)
+      - name: Pull Vercel config
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Sans --prod : build de preview
+      - name: Build
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Sans --prod : URL de test, la prod n'est pas touchée
+      - name: Deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "### 🔍 Preview : $url" >> "$GITHUB_STEP_SUMMARY"
+
   # ─── JOB 3 : Deploy Vercel (push sur main uniquement) ───────
   deploy:
     name: 🚀 Deploy to Vercel
