@@ -1,4 +1,4 @@
-# OnboardFlow 🚀
+# OnboardFlow
 
 > SaaS B2B d'onboarding clients — Next.js 16 · Supabase · Docker · CI/CD
 
@@ -14,11 +14,11 @@
 
 Une agence crée un **projet d'onboarding** pour chaque client et lui partage un lien public (`/onboarding/[slug]`). Le client suit sa checklist, coche les tâches et envoie ses fichiers, sans créer de compte. L'agence suit l'avancement depuis son dashboard.
 
-| Côté agence (connecté) | Côté client (lien public) |
-| --- | --- |
-| Inscription / connexion (Supabase Auth) | Checklist de tâches à cocher |
-| Création et gestion des projets | Envoi de fichiers (Supabase Storage) |
-| Suivi des tâches et des fichiers reçus | Aucun compte requis |
+| Côté agence (connecté)                  | Côté client (lien public)            |
+| --------------------------------------- | ------------------------------------ |
+| Inscription / connexion (Supabase Auth) | Checklist de tâches à cocher         |
+| Création et gestion des projets         | Envoi de fichiers (Supabase Storage) |
+| Suivi des tâches et des fichiers reçus  | Aucun compte requis                  |
 
 ## Stack
 
@@ -71,20 +71,20 @@ npm run dev                  # http://localhost:3000
 
 Variables d'environnement :
 
-| Variable | Où la trouver |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
+| Variable                        | Où la trouver                     |
+| ------------------------------- | --------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API |
 
 Base de données : exécuter [supabase/schema.sql](supabase/schema.sql) dans le SQL Editor de Supabase (tables, policies RLS et bucket `onboarding-files`).
 
 ### Scripts
 
-| Commande | Rôle |
-| --- | --- |
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
-| `npm run lint` | ESLint |
+| Commande            | Rôle                                     |
+| ------------------- | ---------------------------------------- |
+| `npm run dev`       | Serveur de développement                 |
+| `npm run build`     | Build de production                      |
+| `npm run lint`      | ESLint                                   |
 | `npm run typecheck` | Vérification TypeScript (`tsc --noEmit`) |
 
 ## Lancer avec Docker
@@ -122,14 +122,14 @@ Dockerfile
 
 ## Ce que j'ai appris
 
-| Problème rencontré | Leçon |
-| --- | --- |
-| Supabase cassé dans l'image Docker | Les `NEXT_PUBLIC_*` sont figées au build, pas au démarrage → `ARG` + `--build-arg` |
-| PR bloquées après le changement de pipeline | Le nom d'un check requis doit correspondre exactement au nom du job |
-| `npm audit` en échec | L'audit en CI trouve de vraies failles (Next 16.2.4 critique → 16.3.8) |
-| Healthcheck en 401 | Tester l'URL que visitent les utilisateurs, pas l'URL unique (protégée) du déploiement |
-| Variable Vercel renommée par le CLI | Lire les options d'un assistant au lieu de valider par défaut |
-| Typecheck cassé en local | Garder le projet hors d'iCloud (doublons `routes.d 2.ts` dans `.next`) |
+| Problème rencontré                          | Leçon                                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Supabase cassé dans l'image Docker          | Les `NEXT_PUBLIC_*` sont figées au build, pas au démarrage → `ARG` + `--build-arg`     |
+| PR bloquées après le changement de pipeline | Le nom d'un check requis doit correspondre exactement au nom du job                    |
+| `npm audit` en échec                        | L'audit en CI trouve de vraies failles (Next 16.2.4 critique → 16.3.8)                 |
+| Healthcheck en 401                          | Tester l'URL que visitent les utilisateurs, pas l'URL unique (protégée) du déploiement |
+| Variable Vercel renommée par le CLI         | Lire les options d'un assistant au lieu de valider par défaut                          |
+| Typecheck cassé en local                    | Garder le projet hors d'iCloud (doublons `routes.d 2.ts` dans `.next`)                 |
 
 ## Roadmap
 
