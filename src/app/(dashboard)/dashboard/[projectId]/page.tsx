@@ -33,18 +33,21 @@ export default async function ProjectDetailPage({
   const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position);
   const submissions = project.submissions ?? [];
   const completed = tasks.filter((t) => t.completed).length;
-  const percent = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+  const percent =
+    tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
   const isComplete = tasks.length > 0 && percent === 100;
 
-  const clientUrl = `${await getAppUrl()}/onboarding/${project.slug}`;
+  const clientUrl = `${await getAppUrl()}/onboarding/${project.share_token}`;
 
   return (
     <div className="flex flex-col gap-6">
-
       {/* Back */}
       <Link
         href="/dashboard"
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1.5 self-start -ml-2")}
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          "gap-1.5 self-start -ml-2",
+        )}
       >
         <ArrowLeft className="h-4 w-4" />
         Tous les clients
@@ -59,9 +62,13 @@ export default async function ProjectDetailPage({
             </span>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">{project.client_name}</h1>
+            <h1 className="text-xl font-bold tracking-tight">
+              {project.client_name}
+            </h1>
             {project.description && (
-              <p className="text-sm text-muted-foreground mt-0.5">{project.description}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {project.description}
+              </p>
             )}
           </div>
         </div>
@@ -78,17 +85,19 @@ export default async function ProjectDetailPage({
             <span className="text-sm text-muted-foreground tabular-nums">
               {completed} / {tasks.length}
             </span>
-            {tasks.length > 0 && (
-              isComplete ? (
+            {tasks.length > 0 &&
+              (isComplete ? (
                 <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
                   Complété
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                <Badge
+                  variant="secondary"
+                  className="bg-primary/10 text-primary border-primary/20"
+                >
                   {percent}%
                 </Badge>
-              )
-            )}
+              ))}
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -137,12 +146,17 @@ export default async function ProjectDetailPage({
           {submissions.length === 0 ? (
             <div className="rounded-lg border border-dashed py-10 text-center">
               <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Aucun fichier reçu pour l&apos;instant.</p>
+              <p className="text-sm text-muted-foreground">
+                Aucun fichier reçu pour l&apos;instant.
+              </p>
             </div>
           ) : (
             <ul className="flex flex-col divide-y rounded-lg border overflow-hidden">
               {submissions.map((s) => (
-                <li key={s.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors">
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors"
+                >
                   <div className="flex items-center gap-3 min-w-0">
                     <FileText className="h-4 w-4 text-primary shrink-0" />
                     <a

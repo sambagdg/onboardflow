@@ -6,31 +6,36 @@ import { cn } from "@/lib/utils";
 import type { Submission } from "@/types";
 
 export function FileUpload({
-  projectSlug,
+  token,
   initialSubmissions,
 }: {
-  projectSlug: string;
+  token: string;
   initialSubmissions: Submission[];
 }) {
   const [uploading, setUploading] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function uploadFiles(files: FileList) {
     if (!files.length) return;
     setUploading(true);
+    setError(null);
 
     try {
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("projectSlug", projectSlug);
+        formData.append("token", token);
 
         const res = await fetch("/api/upload", { method: "POST", body: formData });
         if (res.ok) {
           const submission: Submission = await res.json();
           setSubmissions((prev) => [submission, ...prev]);
+        } else {
+          const body = await res.json().catch(() => null);
+          setError(`${file.name} : ${body?.error ?? "échec de l'envoi"}`);
         }
       }
     } finally {
@@ -91,7 +96,7 @@ export function FileUpload({
             </p>
             {!uploading && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                ou cliquez pour parcourir — PDF, PNG, JPG, ZIP
+                ou cliquez pour parcourir — PDF, PNG, JPG, ZIP · 4 Mo max
               </p>
             )}
           </div>
@@ -104,9 +109,11 @@ export function FileUpload({
           disabled={uploading}
           onChange={handleChange}
           className="hidden"
-          accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.rar"
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
         />
       </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {/* File list */}
       {submissions.length > 0 && (

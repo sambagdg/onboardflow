@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleTask } from "@/app/actions";
+import { toggleTaskByToken } from "@/app/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -59,10 +59,10 @@ function TaskItem({
 
 export function ChecklistClient({
   initialTasks,
-  projectId,
+  token,
 }: {
   initialTasks: Task[];
-  projectId: string;
+  token: string;
 }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [pending, startTransition] = useTransition();
@@ -77,7 +77,7 @@ export function ChecklistClient({
     );
     startTransition(async () => {
       try {
-        await toggleTask(id, newCompleted, projectId);
+        await toggleTaskByToken(token, id, newCompleted);
       } catch {
         setTasks((prev) =>
           prev.map((t) => (t.id === id ? { ...t, completed: !newCompleted } : t))

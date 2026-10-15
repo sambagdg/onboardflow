@@ -23,6 +23,7 @@ export interface Project {
   client_name: string;
   description?: string;
   slug: string;
+  share_token: string;
   created_at: string;
   tasks?: Task[];
   submissions?: Submission[];
