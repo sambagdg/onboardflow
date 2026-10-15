@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ChecklistClient } from "@/components/onboarding/ChecklistClient";
 import { FileUpload } from "@/components/onboarding/FileUpload";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,15 +9,16 @@ import type { Project } from "@/types";
 export default async function OnboardingPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ token: string }>;
 }) {
-  const { slug } = await params;
+  const { token } = await params;
 
-  const supabase = await createServerClient();
+  // Le jeton du lien est la seule preuve d'accès (pas de compte côté client)
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("projects")
-    .select("*, tasks(*), submissions(*)")
-    .eq("slug", slug)
+    .select("id, client_name, description, tasks(*), submissions(*)")
+    .eq("share_token", token)
     .single();
 
   if (!data) notFound();
@@ -89,7 +90,7 @@ export default async function OnboardingPage({
                   Tout est complété, bravo !
                 </p>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Votre agence a été notifiée et va traiter votre dossier.
+                  Votre agence va maintenant traiter votre dossier.
                 </p>
               </div>
             </CardContent>
@@ -99,7 +100,7 @@ export default async function OnboardingPage({
         {/* Checklist */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold tracking-tight mb-4">Votre checklist</h2>
-          <ChecklistClient initialTasks={tasks} projectId={project.id} />
+          <ChecklistClient initialTasks={tasks} token={token} />
         </section>
 
         {/* File upload */}
@@ -112,7 +113,7 @@ export default async function OnboardingPage({
               </span>
             )}
           </div>
-          <FileUpload projectSlug={slug} initialSubmissions={submissions} />
+          <FileUpload token={token} initialSubmissions={submissions} />
         </section>
       </div>
     </div>

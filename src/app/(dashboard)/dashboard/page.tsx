@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Users, TrendingUp, FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -15,7 +20,9 @@ import type { Project } from "@/types";
 
 export default async function DashboardPage() {
   const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let projects: Project[] = [];
   if (user) {
@@ -28,10 +35,20 @@ export default async function DashboardPage() {
   }
 
   /* Calcul des stats */
-  const totalTasks = projects.reduce((acc, p) => acc + (p.tasks?.length ?? 0), 0);
-  const completedTasks = projects.reduce((acc, p) => acc + (p.tasks?.filter((t) => t.completed).length ?? 0), 0);
-  const avgCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const totalDocs = projects.reduce((acc, p) => acc + (p.submissions?.length ?? 0), 0);
+  const totalTasks = projects.reduce(
+    (acc, p) => acc + (p.tasks?.length ?? 0),
+    0,
+  );
+  const completedTasks = projects.reduce(
+    (acc, p) => acc + (p.tasks?.filter((t) => t.completed).length ?? 0),
+    0,
+  );
+  const avgCompletion =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const totalDocs = projects.reduce(
+    (acc, p) => acc + (p.submissions?.length ?? 0),
+    0,
+  );
   const activeCount = projects.filter((p) => {
     const tasks = p.tasks ?? [];
     return tasks.length > 0 && tasks.some((t) => !t.completed);
@@ -41,13 +58,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-
       {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Mes clients</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {projects.length} espace{projects.length !== 1 ? "s" : ""} d&apos;onboarding
+            {projects.length} espace{projects.length !== 1 ? "s" : ""}{" "}
+            d&apos;onboarding
           </p>
         </div>
         <NewProjectDialog />
@@ -65,7 +82,9 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-primary">{activeCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">en cours d&apos;onboarding</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                en cours d&apos;onboarding
+              </p>
             </CardContent>
           </Card>
 
@@ -77,8 +96,12 @@ export default async function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-primary">{avgCompletion}%</p>
-              <p className="text-xs text-muted-foreground mt-0.5">moyenne sur tous les clients</p>
+              <p className="text-3xl font-bold text-primary">
+                {avgCompletion}%
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                moyenne sur tous les clients
+              </p>
             </CardContent>
           </Card>
 
@@ -91,7 +114,9 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-primary">{totalDocs}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">fichiers collectés</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                fichiers collectés
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -106,7 +131,9 @@ export default async function DashboardPage() {
               <Users className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold mb-1">Aucun client pour l&apos;instant</p>
+              <p className="font-semibold mb-1">
+                Aucun client pour l&apos;instant
+              </p>
               <p className="text-sm text-muted-foreground">
                 Créez votre premier espace d&apos;onboarding pour démarrer.
               </p>
@@ -121,7 +148,9 @@ export default async function DashboardPage() {
               <TableRow>
                 <TableHead>Client</TableHead>
                 <TableHead className="hidden sm:table-cell">Statut</TableHead>
-                <TableHead className="hidden md:table-cell w-40">Progression</TableHead>
+                <TableHead className="hidden md:table-cell w-40">
+                  Progression
+                </TableHead>
                 <TableHead className="hidden lg:table-cell">Créé le</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -134,7 +163,7 @@ export default async function DashboardPage() {
                 const pct = total > 0 ? Math.round((done / total) * 100) : 0;
                 const isComplete = total > 0 && pct === 100;
                 const isEmpty = total === 0;
-                const clientUrl = `${appUrl}/onboarding/${project.slug}`;
+                const clientUrl = `${appUrl}/onboarding/${project.share_token}`;
 
                 return (
                   <TableRow key={project.id} className="group">
@@ -162,7 +191,10 @@ export default async function DashboardPage() {
                           Complété
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                        <Badge
+                          variant="secondary"
+                          className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
+                        >
                           En cours
                         </Badge>
                       )}
@@ -185,7 +217,10 @@ export default async function DashboardPage() {
 
                     {/* Actions DropdownMenu */}
                     <TableCell>
-                      <ProjectActions projectId={project.id} clientUrl={clientUrl} />
+                      <ProjectActions
+                        projectId={project.id}
+                        clientUrl={clientUrl}
+                      />
                     </TableCell>
                   </TableRow>
                 );

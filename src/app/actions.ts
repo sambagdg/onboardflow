@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
@@ -73,13 +74,32 @@ export async function createProject(formData: FormData) {
   redirect(`/dashboard/${data.id}`);
 }
 
-export async function toggleTask(taskId: string, completed: boolean, projectId: string) {
-  const supabase = await createServerClient();
-  await supabase
+/* Page client (sans compte) : le jeton du lien est la seule preuve d'accès */
+export async function toggleTaskByToken(
+  token: string,
+  taskId: string,
+  completed: boolean,
+) {
+  const supabase = createAdminClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("share_token", token)
+    .single();
+
+  if (!project) throw new Error("Lien invalide");
+
+  // Le client admin ignore les RLS : on limite nous-mêmes aux tâches de ce projet
+  const { error } = await supabase
     .from("tasks")
     .update({ completed })
-    .eq("id", taskId);
-  revalidatePath(`/dashboard/${projectId}`);
+    .eq("id", taskId)
+    .eq("project_id", project.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/dashboard/${project.id}`);
 }
 
 export async function addTask(formData: FormData) {
