@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatDate, cn } from "@/lib/utils";
 import { getAppUrl } from "@/lib/app-url";
+import { withSignedUrls } from "@/lib/storage";
 import type { Project } from "@/types";
 
 export default async function ProjectDetailPage({
@@ -31,7 +32,7 @@ export default async function ProjectDetailPage({
 
   const project = data as Project;
   const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position);
-  const submissions = project.submissions ?? [];
+  const submissions = await withSignedUrls(project.submissions ?? []);
   const completed = tasks.filter((t) => t.completed).length;
   const percent =
     tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;

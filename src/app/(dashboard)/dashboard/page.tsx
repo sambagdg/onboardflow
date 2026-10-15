@@ -176,7 +176,7 @@ export default async function DashboardPage() {
                         {project.client_name}
                       </Link>
                       {project.description && (
-                        <p className="text-xs text-muted-foreground truncate max-w-[220px] mt-0.5">
+                        <p className="text-xs text-muted-foreground truncate max-w-55 mt-0.5">
                           {project.description}
                         </p>
                       )}

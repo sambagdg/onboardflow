@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withSignedUrls } from "@/lib/storage";
 
 // Vercel refuse les requêtes de plus de 4,5 Mo
 const MAX_SIZE = 4 * 1024 * 1024;
@@ -60,15 +61,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: storageError.message }, { status: 500 });
   }
 
-  const { data: urlData } = supabase.storage
-    .from("onboarding-files")
-    .getPublicUrl(path);
-
   const { data: submission, error: dbError } = await supabase
     .from("submissions")
     .insert({
       project_id: project.id,
-      file_url: urlData.publicUrl,
+      file_path: path,
       file_name: file.name,
     })
     .select()
@@ -78,5 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  return NextResponse.json(submission, { status: 201 });
+  // Le navigateur reçoit une URL signée, jamais le chemin seul
+  const [signed] = await withSignedUrls([submission]);
+  return NextResponse.json(signed, { status: 201 });
 }
