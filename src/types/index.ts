@@ -13,6 +13,7 @@ export interface Submission {
   project_id: string;
   task_id?: string;
   file_url: string;
+  file_path: string;
   file_name: string;
   created_at: string;
 }

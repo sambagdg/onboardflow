@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ChecklistClient } from "@/components/onboarding/ChecklistClient";
 import { FileUpload } from "@/components/onboarding/FileUpload";
 import { Card, CardContent } from "@/components/ui/card";
+import { withSignedUrls } from "@/lib/storage";
 import type { Project } from "@/types";
 
 export default async function OnboardingPage({
@@ -25,7 +26,7 @@ export default async function OnboardingPage({
 
   const project = data as Project;
   const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position);
-  const submissions = project.submissions ?? [];
+  const submissions = await withSignedUrls(project.submissions ?? []);
 
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
