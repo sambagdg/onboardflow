@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toggleTaskByToken } from "@/app/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { cn, formatDueDate, isOverdue } from "@/lib/utils";
 import type { Task } from "@/types";
 
 function TaskItem({
@@ -47,6 +47,20 @@ function TaskItem({
           <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
         )}
       </div>
+
+      {task.due_date && (
+        <span
+          className={cn(
+            "text-[10px] font-medium px-1.5 py-0.5 rounded-full border shrink-0 mt-0.5 tabular-nums",
+            isOverdue(task.due_date, task.completed)
+              ? "text-destructive bg-destructive/10 border-destructive/20"
+              : "text-muted-foreground border-border"
+          )}
+        >
+          {isOverdue(task.due_date, task.completed) ? "En retard · " : ""}
+          {formatDueDate(task.due_date)}
+        </span>
+      )}
 
       {task.completed && (
         <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">

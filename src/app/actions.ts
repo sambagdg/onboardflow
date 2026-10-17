@@ -131,6 +131,7 @@ export async function addTask(formData: FormData) {
   const projectId = formData.get("projectId") as string;
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
+  const dueDate = formData.get("dueDate") as string;
 
   if (!projectId || !title) return;
 
@@ -150,6 +151,7 @@ export async function addTask(formData: FormData) {
     project_id: projectId,
     title,
     description: description || null,
+    due_date: dueDate || null,
     position: count ?? 0,
   });
 
@@ -161,6 +163,7 @@ export async function updateTask(formData: FormData) {
   const projectId = formData.get("projectId") as string;
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
+  const dueDate = formData.get("dueDate") as string;
 
   if (!taskId || !projectId || !title) return;
 
@@ -175,7 +178,7 @@ export async function updateTask(formData: FormData) {
   // la tâche appartient à un projet de cette agence
   await supabase
     .from("tasks")
-    .update({ title, description: description || null })
+    .update({ title, description: description || null, due_date: dueDate || null })
     .eq("id", taskId)
     .eq("project_id", projectId);
 

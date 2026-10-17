@@ -3,6 +3,7 @@ export interface Task {
   project_id: string;
   title: string;
   description?: string;
+  due_date?: string | null; // "AAAA-MM-JJ"
   completed: boolean;
   position: number;
   created_at: string;

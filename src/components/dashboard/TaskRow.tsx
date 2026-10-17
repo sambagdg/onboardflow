@@ -5,7 +5,7 @@ import { Trash2, Check, Pencil } from "lucide-react";
 import { deleteTask, updateTask } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, formatDueDate, isOverdue } from "@/lib/utils";
 import type { Task } from "@/types";
 
 export function TaskRow({
@@ -41,6 +41,13 @@ export function TaskRow({
             defaultValue={task.description ?? ""}
             placeholder="Instructions pour le client… (optionnel)"
             aria-label="Description"
+          />
+          <Input
+            name="dueDate"
+            type="date"
+            defaultValue={task.due_date ?? ""}
+            aria-label="Date limite"
+            className="w-fit"
           />
           <div className="flex gap-2">
             <Button type="submit" size="sm">
@@ -90,6 +97,20 @@ export function TaskRow({
           </p>
         )}
       </div>
+
+      {task.due_date && (
+        <span
+          className={cn(
+            "text-[10px] font-medium px-1.5 py-0.5 rounded-full border shrink-0 mt-0.5 tabular-nums",
+            isOverdue(task.due_date, task.completed)
+              ? "text-destructive bg-destructive/10 border-destructive/20"
+              : "text-muted-foreground border-border"
+          )}
+        >
+          {isOverdue(task.due_date, task.completed) ? "En retard · " : ""}
+          {formatDueDate(task.due_date)}
+        </span>
+      )}
 
       {task.completed && (
         <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">
