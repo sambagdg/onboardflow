@@ -106,4 +106,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Tailwind 4 remet le curseur par défaut sur les boutons : on rétablit la main */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
 }

@@ -13,6 +13,7 @@ import { formatDate, cn } from "@/lib/utils";
 import { getAppUrl } from "@/lib/app-url";
 import { withSignedUrls } from "@/lib/storage";
 import type { Project } from "@/types";
+import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 
 export default async function ProjectDetailPage({
   params,
@@ -73,7 +74,14 @@ export default async function ProjectDetailPage({
             )}
           </div>
         </div>
-        <CopyLinkButton url={clientUrl} />
+        <div className="flex items-center gap-1 shrink-0">
+          <EditProjectDialog
+            id={project.id}
+            clientName={project.client_name}
+            description={project.description}
+          />
+          <CopyLinkButton url={clientUrl} />
+        </div>
       </div>
 
       {/* Progress */}

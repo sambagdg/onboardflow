@@ -59,21 +59,26 @@ export default async function OnboardingPage({
                   style={{ width: `${percent}%` }}
                 />
               </div>
-              <span className="text-xs font-semibold text-primary tabular-nums">{percent}%</span>
+              <span className="text-xs font-semibold text-primary tabular-nums">
+                {percent}%
+              </span>
             </div>
           )}
         </div>
       </header>
 
       <div className="mx-auto max-w-2xl px-4 py-10">
-
         {/* Project header */}
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            <span className="text-xs font-medium text-primary">Espace d&apos;onboarding</span>
+            <span className="text-xs font-medium text-primary">
+              Espace d&apos;onboarding
+            </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">{project.client_name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">
+            {project.client_name}
+          </h1>
           {project.description && (
             <p className="text-muted-foreground">{project.description}</p>
           )}
@@ -100,20 +105,18 @@ export default async function OnboardingPage({
 
         {/* Checklist */}
         <section className="mb-10">
-          <h2 className="text-lg font-semibold tracking-tight mb-4">Votre checklist</h2>
+          <h2 className="text-lg font-semibold tracking-tight mb-4">
+            Votre checklist
+          </h2>
           <ChecklistClient initialTasks={tasks} token={token} />
         </section>
 
         {/* File upload */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold tracking-tight">Documents à envoyer</h2>
-            {submissions.length > 0 && (
-              <span className="text-sm text-muted-foreground">
-                {submissions.length} fichier{submissions.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
+          <h2 className="text-lg font-semibold tracking-tight mb-4">
+            Documents à envoyer
+          </h2>
+
           <FileUpload token={token} initialSubmissions={submissions} />
         </section>
       </div>
