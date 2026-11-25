@@ -33,6 +33,7 @@ export default async function ProjectDetailPage({
 
   const project = data as Project;
   const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
+  const taskTitles = new Map(tasks.map((t) => [t.id, t.title]));
   const submissions = await withSignedUrls(project.submissions ?? []);
   const completed = tasks.filter((t) => t.completed).length;
   const percent =
@@ -182,6 +183,11 @@ export default async function ProjectDetailPage({
                     >
                       {s.file_name}
                     </a>
+                    {s.task_id && taskTitles.has(s.task_id) && (
+                      <Badge variant="secondary" className="shrink-0 max-w-40 truncate font-normal">
+                        {taskTitles.get(s.task_id)}
+                      </Badge>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0 ml-4 tabular-nums">
                     {formatDate(s.created_at)}
