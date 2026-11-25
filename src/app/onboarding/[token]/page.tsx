@@ -27,6 +27,8 @@ export default async function OnboardingPage({
   const project = data as Project;
   const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
   const submissions = await withSignedUrls(project.submissions ?? []);
+  const taskFiles = submissions.filter((s) => s.task_id);
+  const generalFiles = submissions.filter((s) => !s.task_id);
 
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
@@ -108,16 +110,16 @@ export default async function OnboardingPage({
           <h2 className="text-lg font-semibold tracking-tight mb-4">
             Votre checklist
           </h2>
-          <ChecklistClient initialTasks={tasks} token={token} />
+          <ChecklistClient initialTasks={tasks} initialSubmissions={taskFiles} token={token} />
         </section>
 
         {/* File upload */}
         <section>
           <h2 className="text-lg font-semibold tracking-tight mb-4">
-            Documents à envoyer
+            Autres documents
           </h2>
 
-          <FileUpload token={token} initialSubmissions={submissions} />
+          <FileUpload token={token} initialSubmissions={generalFiles} />
         </section>
       </div>
     </div>

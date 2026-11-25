@@ -93,6 +93,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  // Un fichier joint à une tâche la valide (le client peut toujours la décocher)
+  if (typeof taskId === "string") {
+    await supabase
+      .from("tasks")
+      .update({ completed: true })
+      .eq("id", taskId)
+      .eq("project_id", project.id);
+  }
+
   // Le navigateur reçoit une URL signée, jamais le chemin seul
   const [signed] = await withSignedUrls([submission]);
   return NextResponse.json(signed, { status: 201 });
