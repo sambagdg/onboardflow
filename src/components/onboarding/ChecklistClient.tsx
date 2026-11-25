@@ -1,70 +1,140 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Paperclip, Loader2, FileText } from "lucide-react";
 import { toggleTaskByToken } from "@/app/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import type { Task } from "@/types";
+import { cn, formatDueDate, isOverdue } from "@/lib/utils";
+import { uploadFile } from "@/lib/upload-client";
+import type { Submission, Task } from "@/types";
 
 function TaskItem({
   task,
+  files,
   onToggle,
+  onAttach,
   disabled,
+  uploading,
 }: {
   task: Task;
+  files: Submission[];
   onToggle: (id: string, completed: boolean) => void;
+  onAttach: (taskId: string, file: File) => void;
   disabled: boolean;
+  uploading: boolean;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={() => onToggle(task.id, !task.completed)}
+    <div
       className={cn(
-        "group w-full flex items-start gap-3.5 rounded-lg border p-4 text-left transition-all duration-200 disabled:cursor-wait",
+        "rounded-lg border transition-all duration-200",
         task.completed
           ? "bg-accent/50 border-border/60"
-          : "bg-card border-border hover:border-primary/40 hover:bg-accent/30"
+          : "bg-card border-border hover:border-primary/40"
       )}
     >
-      <Checkbox
-        checked={task.completed}
-        tabIndex={-1}
-        className="mt-0.5 pointer-events-none"
-      />
+      <div className="flex items-start gap-3 p-4">
+        {/* Cocher : seul ce bouton change l'état de la tâche */}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onToggle(task.id, !task.completed)}
+          className="flex flex-1 min-w-0 items-start gap-3.5 text-left disabled:cursor-wait"
+        >
+          <Checkbox checked={task.completed} tabIndex={-1} className="mt-0.5 pointer-events-none" />
+          <div className="flex-1 min-w-0">
+            <p
+              className={cn(
+                "text-sm font-medium transition-colors",
+                task.completed ? "line-through text-muted-foreground" : "text-foreground"
+              )}
+            >
+              {task.title}
+            </p>
+            {task.description && (
+              <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
+            )}
+          </div>
+        </button>
 
-      <div className="flex-1 min-w-0">
-        <p
+        {task.due_date && (
+          <span
+            className={cn(
+              "text-[10px] font-medium px-1.5 py-0.5 rounded-full border shrink-0 mt-0.5 tabular-nums",
+              isOverdue(task.due_date, task.completed)
+                ? "text-destructive bg-destructive/10 border-destructive/20"
+                : "text-muted-foreground border-border"
+            )}
+          >
+            {isOverdue(task.due_date, task.completed) ? "En retard · " : ""}
+            {formatDueDate(task.due_date)}
+          </span>
+        )}
+
+        {task.completed && (
+          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">
+            Fait
+          </span>
+        )}
+
+        {/* Joindre : un <label> qui ouvre l'<input type="file"> (pas un bouton dans un bouton) */}
+        <label
+          title="Joindre un fichier"
           className={cn(
-            "text-sm font-medium transition-colors",
-            task.completed ? "line-through text-muted-foreground" : "text-foreground"
+            "shrink-0 mt-0.5 rounded text-muted-foreground hover:text-primary focus-within:text-primary focus-within:ring-2 focus-within:ring-ring transition-colors",
+            uploading ? "cursor-wait" : "cursor-pointer"
           )}
         >
-          {task.title}
-        </p>
-        {task.description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
-        )}
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          <input
+            type="file"
+            className="sr-only"
+            accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
+            disabled={uploading}
+            aria-label={`Joindre un fichier à « ${task.title} »`}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onAttach(task.id, file);
+              e.target.value = "";
+            }}
+          />
+        </label>
       </div>
 
-      {task.completed && (
-        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">
-          Fait
-        </span>
+      {files.length > 0 && (
+        <ul className="border-t px-4 py-2 flex flex-col gap-1">
+          {files.map((s) => (
+            <li key={s.id}>
+              <a
+                href={s.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{s.file_name}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       )}
-    </button>
+    </div>
   );
 }
 
 export function ChecklistClient({
   initialTasks,
+  initialSubmissions,
   token,
 }: {
   initialTasks: Task[];
+  initialSubmissions: Submission[];
   token: string;
 }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [files, setFiles] = useState<Submission[]>(initialSubmissions);
+  const [uploadingTaskId, setUploadingTaskId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const done = tasks.filter((t) => t.completed).length;
@@ -84,6 +154,19 @@ export function ChecklistClient({
         );
       }
     });
+  }
+
+  async function handleAttach(taskId: string, file: File) {
+    setUploadingTaskId(taskId);
+    setError(null);
+    const result = await uploadFile(token, file, taskId);
+    if ("error" in result) {
+      setError(result.error);
+    } else {
+      setFiles((prev) => [result.submission, ...prev]);
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)));
+    }
+    setUploadingTaskId(null);
   }
 
   if (total === 0) {
@@ -109,14 +192,19 @@ export function ChecklistClient({
         <Progress value={percent} className="w-full" />
       </div>
 
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
       {/* Task list */}
       <div className="flex flex-col gap-2">
         {tasks.map((task) => (
           <TaskItem
             key={task.id}
             task={task}
+            files={files.filter((f) => f.task_id === task.id)}
             onToggle={handleToggle}
+            onAttach={handleAttach}
             disabled={pending}
+            uploading={uploadingTaskId === task.id}
           />
         ))}
       </div>

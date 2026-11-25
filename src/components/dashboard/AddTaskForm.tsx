@@ -58,6 +58,14 @@ export function AddTaskForm({ projectId }: { projectId: string }) {
         />
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="task-due">
+          Date limite{" "}
+          <span className="font-normal text-muted-foreground">(optionnel)</span>
+        </Label>
+        <Input id="task-due" name="dueDate" type="date" className="w-fit" />
+      </div>
+
       <div className="flex gap-2 pt-1">
         <Button type="submit" size="sm">Ajouter</Button>
         <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>

@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("file");
   const token = formData.get("token");
+  const taskId = formData.get("taskId");
 
   if (!(file instanceof File) || typeof token !== "string") {
     return NextResponse.json(
@@ -50,6 +51,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Lien invalide" }, { status: 404 });
   }
 
+  if (taskId !== null) {
+    if (typeof taskId !== "string") {
+      return NextResponse.json({ error: "Tâche invalide" }, { status: 400 });
+    }
+    const { data: task } = await supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", taskId)
+      .eq("project_id", project.id)
+      .maybeSingle();
+
+    if (!task) {
+      return NextResponse.json({ error: "Tâche invalide" }, { status: 400 });
+    }
+  }
+
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${project.slug}/${Date.now()}-${safeName}`;
 
@@ -67,12 +84,22 @@ export async function POST(request: Request) {
       project_id: project.id,
       file_path: path,
       file_name: file.name,
+      task_id: typeof taskId === "string" ? taskId : null,
     })
     .select()
     .single();
 
   if (dbError) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
+  }
+
+  // Un fichier joint à une tâche la valide (le client peut toujours la décocher)
+  if (typeof taskId === "string") {
+    await supabase
+      .from("tasks")
+      .update({ completed: true })
+      .eq("id", taskId)
+      .eq("project_id", project.id);
   }
 
   // Le navigateur reçoit une URL signée, jamais le chemin seul

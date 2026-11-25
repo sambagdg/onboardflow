@@ -74,6 +74,31 @@ export async function createProject(formData: FormData) {
   redirect(`/dashboard/${data.id}`);
 }
 
+export async function updateProject(formData: FormData) {
+  const id = formData.get("id") as string;
+  const clientName = (formData.get("clientName") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim();
+
+  if (!id || !clientName) return;
+
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  // Liste blanche : seuls ces 2 champs sont modifiables (pas de mass assignment)
+  await supabase
+    .from("projects")
+    .update({ client_name: clientName, description: description || null })
+    .eq("id", id)
+    .eq("agency_id", user.id);
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/${id}`);
+}
+
 /* Page client (sans compte) : le jeton du lien est la seule preuve d'accès */
 export async function toggleTaskByToken(
   token: string,
@@ -106,6 +131,7 @@ export async function addTask(formData: FormData) {
   const projectId = formData.get("projectId") as string;
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
+  const dueDate = formData.get("dueDate") as string;
 
   if (!projectId || !title) return;
 
@@ -116,17 +142,80 @@ export async function addTask(formData: FormData) {
 
   if (!user) redirect("/login");
 
-  const { count } = await supabase
+  // Dernière position + 1 (le nombre de tâches crée des doublons après une suppression)
+  const { data: last } = await supabase
     .from("tasks")
-    .select("*", { count: "exact", head: true })
-    .eq("project_id", projectId);
+    .select("position")
+    .eq("project_id", projectId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   await supabase.from("tasks").insert({
     project_id: projectId,
     title,
     description: description || null,
-    position: count ?? 0,
+    due_date: dueDate || null,
+    position: (last?.position ?? -1) + 1,
   });
+
+  revalidatePath(`/dashboard/${projectId}`);
+}
+
+export async function updateTask(formData: FormData) {
+  const taskId = formData.get("taskId") as string;
+  const projectId = formData.get("projectId") as string;
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim();
+  const dueDate = formData.get("dueDate") as string;
+
+  if (!taskId || !projectId || !title) return;
+
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  // Liste blanche des champs ; la RLS "agence_manage_tasks" garantit que
+  // la tâche appartient à un projet de cette agence
+  await supabase
+    .from("tasks")
+    .update({ title, description: description || null, due_date: dueDate || null })
+    .eq("id", taskId)
+    .eq("project_id", projectId);
+
+  revalidatePath(`/dashboard/${projectId}`);
+}
+
+export async function moveTask(projectId: string, taskId: string, direction: "up" | "down") {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  // Même ordre que l'affichage : position, puis date de création en cas d'égalité
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("project_id", projectId)
+    .order("position")
+    .order("created_at");
+
+  if (!tasks) return;
+
+  const ids = tasks.map((t) => t.id);
+  const from = ids.indexOf(taskId);
+  const to = direction === "up" ? from - 1 : from + 1;
+  if (from === -1 || to < 0 || to >= ids.length) return;
+
+  [ids[from], ids[to]] = [ids[to], ids[from]];
+
+  // Renumérote toutes les tâches en une seule transaction (migration 006)
+  await supabase.rpc("reorder_tasks", { p_project_id: projectId, p_task_ids: ids });
 
   revalidatePath(`/dashboard/${projectId}`);
 }

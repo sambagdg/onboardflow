@@ -13,6 +13,7 @@ import { formatDate, cn } from "@/lib/utils";
 import { getAppUrl } from "@/lib/app-url";
 import { withSignedUrls } from "@/lib/storage";
 import type { Project } from "@/types";
+import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 
 export default async function ProjectDetailPage({
   params,
@@ -31,7 +32,8 @@ export default async function ProjectDetailPage({
   if (!data) notFound();
 
   const project = data as Project;
-  const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position);
+  const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
+  const taskTitles = new Map(tasks.map((t) => [t.id, t.title]));
   const submissions = await withSignedUrls(project.submissions ?? []);
   const completed = tasks.filter((t) => t.completed).length;
   const percent =
@@ -73,7 +75,14 @@ export default async function ProjectDetailPage({
             )}
           </div>
         </div>
-        <CopyLinkButton url={clientUrl} />
+        <div className="flex items-center gap-1 shrink-0">
+          <EditProjectDialog
+            id={project.id}
+            clientName={project.client_name}
+            description={project.description}
+          />
+          <CopyLinkButton url={clientUrl} />
+        </div>
       </div>
 
       {/* Progress */}
@@ -120,8 +129,14 @@ export default async function ProjectDetailPage({
         <CardContent className="flex flex-col gap-4">
           {tasks.length > 0 ? (
             <ul className="flex flex-col gap-2">
-              {tasks.map((task) => (
-                <TaskRow key={task.id} task={task} projectId={projectId} />
+              {tasks.map((task, i) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  projectId={projectId}
+                  isFirst={i === 0}
+                  isLast={i === tasks.length - 1}
+                />
               ))}
             </ul>
           ) : (
@@ -168,6 +183,11 @@ export default async function ProjectDetailPage({
                     >
                       {s.file_name}
                     </a>
+                    {s.task_id && taskTitles.has(s.task_id) && (
+                      <Badge variant="secondary" className="shrink-0 max-w-40 truncate font-normal">
+                        {taskTitles.get(s.task_id)}
+                      </Badge>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0 ml-4 tabular-nums">
                     {formatDate(s.created_at)}
