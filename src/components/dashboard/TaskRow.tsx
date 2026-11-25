@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2, Check, Pencil } from "lucide-react";
-import { deleteTask, updateTask } from "@/app/actions";
+import { Trash2, Check, Pencil, ChevronUp, ChevronDown } from "lucide-react";
+import { deleteTask, updateTask, moveTask } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatDueDate, isOverdue } from "@/lib/utils";
@@ -11,9 +11,13 @@ import type { Task } from "@/types";
 export function TaskRow({
   task,
   projectId,
+  isFirst,
+  isLast,
 }: {
   task: Task;
   projectId: string;
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -117,6 +121,27 @@ export function TaskRow({
           Fait
         </span>
       )}
+
+      <div className="flex flex-col -my-1 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <button
+          type="button"
+          disabled={isFirst || pending}
+          onClick={() => startTransition(() => moveTask(projectId, task.id, "up"))}
+          className="text-muted-foreground/60 hover:text-foreground disabled:opacity-20"
+          aria-label="Monter la tâche"
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          disabled={isLast || pending}
+          onClick={() => startTransition(() => moveTask(projectId, task.id, "down"))}
+          className="text-muted-foreground/60 hover:text-foreground disabled:opacity-20"
+          aria-label="Descendre la tâche"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
 
       <button
         type="button"

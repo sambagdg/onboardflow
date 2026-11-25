@@ -32,7 +32,7 @@ export default async function ProjectDetailPage({
   if (!data) notFound();
 
   const project = data as Project;
-  const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position);
+  const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
   const submissions = await withSignedUrls(project.submissions ?? []);
   const completed = tasks.filter((t) => t.completed).length;
   const percent =
@@ -128,8 +128,14 @@ export default async function ProjectDetailPage({
         <CardContent className="flex flex-col gap-4">
           {tasks.length > 0 ? (
             <ul className="flex flex-col gap-2">
-              {tasks.map((task) => (
-                <TaskRow key={task.id} task={task} projectId={projectId} />
+              {tasks.map((task, i) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  projectId={projectId}
+                  isFirst={i === 0}
+                  isLast={i === tasks.length - 1}
+                />
               ))}
             </ul>
           ) : (

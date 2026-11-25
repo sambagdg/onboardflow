@@ -25,7 +25,7 @@ export default async function OnboardingPage({
   if (!data) notFound();
 
   const project = data as Project;
-  const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position);
+  const tasks = (project.tasks ?? []).sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
   const submissions = await withSignedUrls(project.submissions ?? []);
 
   const total = tasks.length;

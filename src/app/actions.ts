@@ -142,17 +142,21 @@ export async function addTask(formData: FormData) {
 
   if (!user) redirect("/login");
 
-  const { count } = await supabase
+  // Dernière position + 1 (le nombre de tâches crée des doublons après une suppression)
+  const { data: last } = await supabase
     .from("tasks")
-    .select("*", { count: "exact", head: true })
-    .eq("project_id", projectId);
+    .select("position")
+    .eq("project_id", projectId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   await supabase.from("tasks").insert({
     project_id: projectId,
     title,
     description: description || null,
     due_date: dueDate || null,
-    position: count ?? 0,
+    position: (last?.position ?? -1) + 1,
   });
 
   revalidatePath(`/dashboard/${projectId}`);
@@ -181,6 +185,37 @@ export async function updateTask(formData: FormData) {
     .update({ title, description: description || null, due_date: dueDate || null })
     .eq("id", taskId)
     .eq("project_id", projectId);
+
+  revalidatePath(`/dashboard/${projectId}`);
+}
+
+export async function moveTask(projectId: string, taskId: string, direction: "up" | "down") {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  // Même ordre que l'affichage : position, puis date de création en cas d'égalité
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("project_id", projectId)
+    .order("position")
+    .order("created_at");
+
+  if (!tasks) return;
+
+  const ids = tasks.map((t) => t.id);
+  const from = ids.indexOf(taskId);
+  const to = direction === "up" ? from - 1 : from + 1;
+  if (from === -1 || to < 0 || to >= ids.length) return;
+
+  [ids[from], ids[to]] = [ids[to], ids[from]];
+
+  // Renumérote toutes les tâches en une seule transaction (migration 006)
+  await supabase.rpc("reorder_tasks", { p_project_id: projectId, p_task_ids: ids });
 
   revalidatePath(`/dashboard/${projectId}`);
 }
