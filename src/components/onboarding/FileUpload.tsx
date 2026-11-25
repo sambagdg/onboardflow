@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, FileText, ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { uploadFile } from "@/lib/upload-client";
 import type { Submission } from "@/types";
 
 export function FileUpload({
@@ -25,17 +26,11 @@ export function FileUpload({
 
     try {
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("token", token);
-
-        const res = await fetch("/api/upload", { method: "POST", body: formData });
-        if (res.ok) {
-          const submission: Submission = await res.json();
-          setSubmissions((prev) => [submission, ...prev]);
+        const result = await uploadFile(token, file);
+        if ("error" in result) {
+          setError(result.error);
         } else {
-          const body = await res.json().catch(() => null);
-          setError(`${file.name} : ${body?.error ?? "échec de l'envoi"}`);
+          setSubmissions((prev) => [result.submission, ...prev]);
         }
       }
     } finally {
