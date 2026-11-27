@@ -6,6 +6,8 @@ export interface Task {
   due_date?: string | null; // "AAAA-MM-JJ"
   completed: boolean;
   kind: "action" | "document";
+  approved_at?: string | null; // instant de validation par l'agence
+  review_note?: string | null; // message de refus visible par le client
   position: number;
   created_at: string;
 }

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     }
     const { data: task } = await supabase
       .from("tasks")
-      .select("kind")
+      .select("kind, approved_at")
       .eq("id", taskId)
       .eq("project_id", project.id)
       .maybeSingle();
@@ -67,6 +67,13 @@ export async function POST(request: Request) {
     }
     if (task.kind !== "document") {
       return NextResponse.json({ error: "Cette tâche n'attend pas de fichier" }, { status: 400 });
+    }
+    // Tâche validée par l'agence : verrouillée, on ne stocke pas de fichier inutile
+    if (task.approved_at) {
+      return NextResponse.json(
+        { error: "Cette tâche a déjà été validée par votre agence" },
+        { status: 409 },
+      );
     }
   }
 
@@ -96,13 +103,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  // Un fichier joint à une tâche la valide (le client peut toujours la décocher)
+  // Un fichier joint à une tâche l'envoie à l'agence, et efface un éventuel refus précédent
   if (typeof taskId === "string") {
     await supabase
       .from("tasks")
-      .update({ completed: true })
+      .update({ completed: true, review_note: null })
       .eq("id", taskId)
-      .eq("project_id", project.id);
+      .eq("project_id", project.id)
+      .is("approved_at", null);
   }
 
   // Le navigateur reçoit une URL signée, jamais le chemin seul

@@ -45,7 +45,14 @@ export default async function DashboardPage() {
     return tasks.length > 0 && tasks.some((t) => !t.completed);
   }).length;
 
+  // Tâches envoyées par les clients, en attente de votre validation
+  const toReview = projects.reduce(
+    (acc, p) => acc + (p.tasks?.filter((t) => t.completed && !t.approved_at).length ?? 0),
+    0,
+  );
+
   const stats = [
+    { label: "À valider", value: String(toReview), hint: "envois en attente de revue" },
     { label: "Clients en cours", value: String(activeCount), hint: "onboarding non terminé" },
     { label: "Taux de complétion", value: `${avgCompletion}%`, hint: "sur toutes les tâches" },
     { label: "Documents reçus", value: String(totalDocs), hint: "fichiers collectés" },
@@ -83,7 +90,7 @@ export default async function DashboardPage() {
       ) : (
         <>
           {/* Stats : une seule bande, séparée par des filets */}
-          <div className="grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-3">
+          <div className="grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((s) => (
               <div key={s.label} className="bg-background p-6">
                 <p className="text-sm text-muted-foreground">{s.label}</p>

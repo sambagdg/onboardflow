@@ -118,7 +118,7 @@ export async function toggleTaskByToken(
   // Le client admin ignore les RLS : on limite nous-mêmes aux tâches de ce projet
   const { data: task } = await supabase
     .from("tasks")
-    .select("kind")
+    .select("kind, approved_at")
     .eq("id", taskId)
     .eq("project_id", project.id)
     .maybeSingle();
@@ -126,16 +126,21 @@ export async function toggleTaskByToken(
   if (!task) throw new Error("Tâche introuvable");
   // Une tâche "document" se valide uniquement en joignant un fichier
   if (task.kind === "document") throw new Error("Cette tâche se valide en joignant un fichier");
+  // Une fois validée par l'agence, la tâche est verrouillée pour le client
+  if (task.approved_at) throw new Error("Cette tâche a déjà été validée par votre agence");
 
+  // Renvoyer la tâche efface l'ancien message de refus : l'agence voit un nouvel envoi
   const { error } = await supabase
     .from("tasks")
-    .update({ completed })
+    .update(completed ? { completed: true, review_note: null } : { completed: false })
     .eq("id", taskId)
-    .eq("project_id", project.id);
+    .eq("project_id", project.id)
+    .is("approved_at", null); // si l'agence valide entre-temps, on ne touche à rien
 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/dashboard/${project.id}`);
+  revalidatePath("/dashboard");
 }
 
 export async function addTask(formData: FormData) {
@@ -201,6 +206,72 @@ export async function updateTask(formData: FormData) {
     .eq("project_id", projectId);
 
   revalidatePath(`/dashboard/${projectId}`);
+}
+
+/* ── Revue par l'agence : Envoyé → Validé, ou retour en À faire avec un message ── */
+
+export async function approveTask(taskId: string, projectId: string) {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  // Seule une tâche envoyée par le client (completed) peut être validée ;
+  // la RLS "agence_manage_tasks" garantit qu'elle appartient à cette agence
+  await supabase
+    .from("tasks")
+    .update({ approved_at: new Date().toISOString(), review_note: null })
+    .eq("id", taskId)
+    .eq("project_id", projectId)
+    .eq("completed", true);
+
+  revalidatePath(`/dashboard/${projectId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function unapproveTask(taskId: string, projectId: string) {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  await supabase
+    .from("tasks")
+    .update({ approved_at: null })
+    .eq("id", taskId)
+    .eq("project_id", projectId);
+
+  revalidatePath(`/dashboard/${projectId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function rejectTask(formData: FormData) {
+  const taskId = formData.get("taskId") as string;
+  const projectId = formData.get("projectId") as string;
+  const note = ((formData.get("note") as string) ?? "").trim().slice(0, 500);
+
+  if (!taskId || !projectId) return;
+
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  // Une seule requête : la tâche ne peut pas rester à la fois "validée" et "à refaire"
+  await supabase
+    .from("tasks")
+    .update({ completed: false, approved_at: null, review_note: note || null })
+    .eq("id", taskId)
+    .eq("project_id", projectId);
+
+  revalidatePath(`/dashboard/${projectId}`);
+  revalidatePath("/dashboard");
 }
 
 export async function moveTask(projectId: string, taskId: string, direction: "up" | "down") {

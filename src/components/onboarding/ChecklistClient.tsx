@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { Check, Paperclip, Loader2, FileText } from "lucide-react";
+import { AlertCircle, Check, Paperclip, Loader2, FileText } from "lucide-react";
 import { toggleTaskByToken } from "@/app/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -28,10 +28,22 @@ function TaskItem({
   disabled: boolean;
   uploading: boolean;
 }) {
+  // Statut de revue : Validé (verrouillé) > Envoyé (en attente de l'agence) > À refaire (refusé)
+  const isApproved = Boolean(task.approved_at);
+  const isSubmitted = task.completed && !isApproved;
+  const needsRedo = !task.completed && Boolean(task.review_note);
+
   // Case + titre, partagés par les deux types (seul le conteneur change)
   const header = (
     <>
-      <Checkbox checked={task.completed} tabIndex={-1} className="mt-0.5 pointer-events-none" />
+      <Checkbox
+        checked={task.completed}
+        tabIndex={-1}
+        className={cn(
+          "mt-0.5 pointer-events-none",
+          isApproved && "data-checked:border-emerald-500 data-checked:bg-emerald-500 dark:data-checked:bg-emerald-500"
+        )}
+      />
       <div className="flex-1 min-w-0">
         <p
           className={cn(
@@ -59,7 +71,8 @@ function TaskItem({
     >
       <div className="flex items-start gap-3 p-4">
         {/* Action : le client coche. Document : la tâche se valide en joignant un fichier */}
-        {task.kind === "action" ? (
+        {/* Validée par l'agence : plus rien à faire, la ligne n'est plus interactive */}
+        {task.kind === "action" && !isApproved ? (
           <button
             type="button"
             disabled={disabled}
@@ -86,14 +99,21 @@ function TaskItem({
           </span>
         )}
 
-        {task.completed && (
-          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">
-            Fait
+        {(isApproved || isSubmitted || needsRedo) && (
+          <span
+            className={cn(
+              "text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 mt-0.5",
+              isApproved && "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+              isSubmitted && "text-primary bg-primary/10 border-primary/20",
+              needsRedo && "text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"
+            )}
+          >
+            {isApproved ? "Validé" : isSubmitted ? "Envoyé" : "À refaire"}
           </span>
         )}
 
         {/* Joindre : un <label> qui ouvre l'<input type="file"> (pas un bouton dans un bouton) */}
-        {task.kind === "document" && (
+        {task.kind === "document" && !isApproved && (
           <label
             title="Joindre un fichier"
             className={cn(
@@ -117,6 +137,17 @@ function TaskItem({
           </label>
         )}
       </div>
+
+      {/* Refus : le message de l'agence explique quoi corriger */}
+      {needsRedo && (
+        <p className="mx-4 mb-3 -mt-1 flex items-start gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+          <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+          <span>
+            <span className="font-semibold">Votre agence : </span>
+            {task.review_note}
+          </span>
+        </p>
+      )}
 
       {files.length > 0 && (
         <ul className="border-t px-4 py-2 flex flex-col gap-1">
@@ -158,6 +189,7 @@ export function ChecklistClient({
   const total = tasks.length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
   const allDone = total > 0 && done === total;
+  const allApproved = total > 0 && tasks.every((t) => t.approved_at);
 
   // Célébration discrète au moment où le client termine (pas si c'était déjà fini au chargement)
   const root = useRef<HTMLDivElement>(null);
@@ -183,16 +215,24 @@ export function ChecklistClient({
   );
 
   function handleToggle(id: string, newCompleted: boolean) {
+    const previous = tasks.find((t) => t.id === id);
+    if (!previous) return;
+    setError(null);
+    // Comme le serveur : renvoyer la tâche efface le message de refus
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: newCompleted } : t))
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, completed: newCompleted, review_note: newCompleted ? null : t.review_note }
+          : t
+      )
     );
     startTransition(async () => {
       try {
         await toggleTaskByToken(token, id, newCompleted);
       } catch {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, completed: !newCompleted } : t))
-        );
+        // Refusé (ex : l'agence vient de la valider) : on remet la tâche telle qu'elle était
+        setTasks((prev) => prev.map((t) => (t.id === id ? previous : t)));
+        setError("Cette tâche n'a pas pu être modifiée. Rechargez la page pour voir son état à jour.");
       }
     });
   }
@@ -205,7 +245,9 @@ export function ChecklistClient({
       setError(result.error);
     } else {
       setFiles((prev) => [result.submission, ...prev]);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)));
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, completed: true, review_note: null } : t))
+      );
     }
     setUploadingTaskId(null);
   }
@@ -247,9 +289,13 @@ export function ChecklistClient({
               <Check className="h-5 w-5" strokeWidth={2.5} />
             </div>
             <div>
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400">Tout est complété, merci !</p>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400">
+                {allApproved ? "Dossier validé, merci !" : "Tout est complété, merci !"}
+              </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Votre agence va maintenant traiter votre dossier.
+                {allApproved
+                  ? "Votre agence a validé l'ensemble de vos éléments."
+                  : "Votre agence va maintenant vérifier vos éléments."}
               </p>
             </div>
           </div>
