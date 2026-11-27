@@ -5,15 +5,14 @@ import { createServerClient } from "@/lib/supabase/server";
 import { AddTaskForm } from "@/components/dashboard/AddTaskForm";
 import { TaskRow } from "@/components/dashboard/TaskRow";
 import { CopyLinkButton } from "@/components/dashboard/CopyLinkButton";
+import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatDate, cn } from "@/lib/utils";
 import { getAppUrl } from "@/lib/app-url";
 import { withSignedUrls } from "@/lib/storage";
 import type { Project } from "@/types";
-import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 
 export default async function ProjectDetailPage({
   params,
@@ -36,97 +35,72 @@ export default async function ProjectDetailPage({
   const taskTitles = new Map(tasks.map((t) => [t.id, t.title]));
   const submissions = await withSignedUrls(project.submissions ?? []);
   const completed = tasks.filter((t) => t.completed).length;
-  const percent =
-    tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+  const percent = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
   const isComplete = tasks.length > 0 && percent === 100;
 
   const clientUrl = `${await getAppUrl()}/onboarding/${project.share_token}`;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Back */}
-      <Link
-        href="/dashboard"
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "gap-1.5 self-start -ml-2",
-        )}
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Tous les clients
-      </Link>
+    <div className="mx-auto flex max-w-3xl flex-col gap-10">
+      <div>
+        <Link
+          href="/dashboard"
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 mb-8 gap-1.5 rounded-full")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Tous les clients
+        </Link>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-            <span className="text-sm font-bold text-primary">
-              {project.client_name.slice(0, 2).toUpperCase()}
-            </span>
+        {/* En-tête */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-muted/50">
+              <span className="text-sm font-semibold text-primary">
+                {project.client_name.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-3xl font-semibold tracking-[-0.03em]">{project.client_name}</h1>
+              {project.description && (
+                <p className="mt-0.5 text-[15px] text-muted-foreground">{project.description}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">
-              {project.client_name}
-            </h1>
-            {project.description && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {project.description}
-              </p>
-            )}
+          <div className="flex shrink-0 items-center gap-1">
+            <EditProjectDialog
+              id={project.id}
+              clientName={project.client_name}
+              description={project.description}
+            />
+            <CopyLinkButton url={clientUrl} />
           </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <EditProjectDialog
-            id={project.id}
-            clientName={project.client_name}
-            description={project.description}
-          />
-          <CopyLinkButton url={clientUrl} />
         </div>
       </div>
 
-      {/* Progress */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Progression client
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground tabular-nums">
-              {completed} / {tasks.length}
+      {/* Progression */}
+      <section className="rounded-2xl border p-6">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="text-sm font-medium text-muted-foreground">Progression du client</h2>
+          <p className="text-sm tabular-nums text-muted-foreground">
+            <span className="text-2xl font-semibold tracking-[-0.03em] text-foreground">{percent}%</span>
+            <span className="ml-2">
+              {completed}/{tasks.length} tâche{tasks.length !== 1 ? "s" : ""}
             </span>
-            {tasks.length > 0 &&
-              (isComplete ? (
-                <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                  Complété
-                </Badge>
-              ) : (
-                <Badge
-                  variant="secondary"
-                  className="bg-primary/10 text-primary border-primary/20"
-                >
-                  {percent}%
-                </Badge>
-              ))}
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Progress value={percent} className="w-full" />
-          {isComplete && (
-            <p className="mt-3 text-sm text-center font-medium text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5">
-              <PartyPopper className="h-4 w-4" />
-              Le client a complété toutes les tâches !
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <Progress value={percent} className="h-2 w-full" />
+        {isComplete && (
+          <p className="mt-4 flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            <PartyPopper className="h-4 w-4" />
+            Le client a complété toutes les tâches.
+          </p>
+        )}
+      </section>
 
       {/* Checklist */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Checklist</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <section>
+        <h2 className="mb-4 text-lg font-semibold tracking-tight">Checklist</h2>
+        <div className="flex flex-col gap-4">
           {tasks.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {tasks.map((task, i) => (
@@ -140,64 +114,61 @@ export default async function ProjectDetailPage({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground italic">
-              Aucune tâche. Ajoutez les éléments que votre client doit fournir.
+            <p className="rounded-2xl border border-dashed px-6 py-8 text-center text-[15px] text-muted-foreground">
+              Aucune tâche. Ajoutez ce que votre client doit faire ou fournir.
             </p>
           )}
           <AddTaskForm projectId={projectId} />
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Documents */}
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-2 pb-3">
-          <CardTitle className="text-base">Documents reçus</CardTitle>
+      <section>
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Documents reçus</h2>
           {submissions.length > 0 && (
-            <Badge variant="secondary" className="ml-auto">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
               {submissions.length}
-            </Badge>
+            </span>
           )}
-        </CardHeader>
-        <CardContent>
-          {submissions.length === 0 ? (
-            <div className="rounded-lg border border-dashed py-10 text-center">
-              <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Aucun fichier reçu pour l&apos;instant.
-              </p>
-            </div>
-          ) : (
-            <ul className="flex flex-col divide-y rounded-lg border overflow-hidden">
-              {submissions.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <FileText className="h-4 w-4 text-primary shrink-0" />
-                    <a
-                      href={s.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm hover:text-primary transition-colors truncate"
-                    >
-                      {s.file_name}
-                    </a>
-                    {s.task_id && taskTitles.has(s.task_id) && (
-                      <Badge variant="secondary" className="shrink-0 max-w-40 truncate font-normal">
-                        {taskTitles.get(s.task_id)}
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0 ml-4 tabular-nums">
-                    {formatDate(s.created_at)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {submissions.length === 0 ? (
+          <div className="rounded-2xl border border-dashed py-12 text-center">
+            <FileText className="mx-auto mb-3 h-7 w-7 text-muted-foreground/40" strokeWidth={1.5} />
+            <p className="text-[15px] text-muted-foreground">Aucun fichier reçu pour l&apos;instant.</p>
+          </div>
+        ) : (
+          <ul className="divide-y overflow-hidden rounded-2xl border">
+            {submissions.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-muted/40"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <FileText className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
+                  <a
+                    href={s.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate text-sm transition-colors hover:text-primary"
+                  >
+                    {s.file_name}
+                  </a>
+                  {s.task_id && taskTitles.has(s.task_id) && (
+                    <Badge variant="secondary" className="max-w-40 shrink-0 truncate rounded-full font-normal">
+                      {taskTitles.get(s.task_id)}
+                    </Badge>
+                  )}
+                </div>
+                <span className="ml-4 shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {formatDate(s.created_at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

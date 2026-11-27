@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { Lock } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ChecklistClient } from "@/components/onboarding/ChecklistClient";
 import { FileUpload } from "@/components/onboarding/FileUpload";
-import { Card, CardContent } from "@/components/ui/card";
+import { Reveal } from "@/components/landing/reveal";
 import { withSignedUrls } from "@/lib/storage";
 import type { Project } from "@/types";
 
@@ -30,98 +30,44 @@ export default async function OnboardingPage({
   const taskFiles = submissions.filter((s) => s.task_id);
   const generalFiles = submissions.filter((s) => !s.task_id);
 
-  const total = tasks.length;
-  const completed = tasks.filter((t) => t.completed).length;
-  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-
+  // La progression et le message de fin vivent dans ChecklistClient (une seule source de vérité,
+  // mise à jour à chaque coche) : la page ne les calcule plus côté serveur.
   return (
     <div className="min-h-screen bg-background">
-      {/* Top progress bar */}
-      <div className="fixed top-0 inset-x-0 z-50 h-0.5 bg-border">
-        <div
-          className="h-full bg-primary transition-all duration-700"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-          <span className="font-bold text-base tracking-tight">
-            Onboard<span className="text-primary">Flow</span>
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-xl backdrop-saturate-150 supports-backdrop-filter:bg-background/70">
+        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4 sm:px-6">
+          <span className="text-[17px] font-semibold tracking-tight">OnboardFlow</span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" />
+            Espace privé
           </span>
-          {total > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground tabular-nums hidden sm:block">
-                {completed}/{total} tâches
-              </span>
-              <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-500"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-              <span className="text-xs font-semibold text-primary tabular-nums">
-                {percent}%
-              </span>
-            </div>
-          )}
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        {/* Project header */}
-        <div className="mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 mb-4">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            <span className="text-xs font-medium text-primary">
-              Espace d&apos;onboarding
-            </span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
+      <Reveal className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+        <div data-reveal className="mb-12">
+          <p className="mb-3 text-sm font-medium text-primary">Espace d&apos;onboarding</p>
+          <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl">
             {project.client_name}
           </h1>
           {project.description && (
-            <p className="text-muted-foreground">{project.description}</p>
+            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{project.description}</p>
           )}
         </div>
 
-        {/* Completion banner */}
-        {percent === 100 && total > 0 && (
-          <Card className="mb-8 border-emerald-500/20 bg-emerald-500/5">
-            <CardContent className="flex items-center gap-4 py-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-emerald-700 dark:text-emerald-400">
-                  Tout est complété, bravo !
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Votre agence va maintenant traiter votre dossier.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Checklist */}
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold tracking-tight mb-4">
-            Votre checklist
-          </h2>
+        <section data-reveal className="mb-14">
+          <h2 className="mb-4 text-lg font-semibold tracking-tight">Votre checklist</h2>
           <ChecklistClient initialTasks={tasks} initialSubmissions={taskFiles} token={token} />
         </section>
 
-        {/* File upload */}
-        <section>
-          <h2 className="text-lg font-semibold tracking-tight mb-4">
-            Autres documents
-          </h2>
-
+        <section data-reveal>
+          <h2 className="mb-1 text-lg font-semibold tracking-tight">Autres documents</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Un fichier qui ne correspond à aucune tâche ? Déposez-le ici.
+          </p>
           <FileUpload token={token} initialSubmissions={generalFiles} />
         </section>
-      </div>
+      </Reveal>
     </div>
   );
 }

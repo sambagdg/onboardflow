@@ -10,20 +10,22 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { href: "#features", label: "Fonctionnalités" },
   { href: "#how-it-works", label: "Comment ça marche" },
+  { href: "#features", label: "Fonctionnalités" },
+  { href: "#security", label: "Sécurité" },
   { href: "#pricing", label: "Tarifs" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
+  // Matériau translucide : le contenu défile dessous, la barre reste lisible
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-5xl items-center px-4">
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/90 backdrop-blur-xl backdrop-saturate-150 supports-backdrop-filter:bg-background/70">
+      <div className="mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6">
 
         {/* Logo */}
-        <Link href="/" className="mr-8 font-bold text-lg tracking-tight">
+        <Link href="/" className="mr-8 text-[17px] font-semibold tracking-tight">
           OnboardFlow
         </Link>
 
@@ -46,7 +48,10 @@ export function SiteHeader() {
           <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Connexion
           </Link>
-          <Link href="/register" className={cn(buttonVariants({ size: "sm" }))}>
+          <Link
+            href="/register"
+            className={cn(buttonVariants({ size: "sm" }), "rounded-full px-4 transition-transform active:scale-[0.97]")}
+          >
             Commencer gratuitement
           </Link>
         </div>

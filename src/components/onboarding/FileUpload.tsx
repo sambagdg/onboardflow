@@ -52,16 +52,16 @@ export function FileUpload({
   return (
     <div className="flex flex-col gap-4">
       {/* Drop zone */}
-      <div
+      {/* <label> : cliquer ou appuyer sur Entrée ouvre le sélecteur (l'input reste focusable au clavier) */}
+      <label
         className={cn(
-          "relative rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-200",
+          "relative block rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-200 focus-within:border-primary/60 focus-within:ring-3 focus-within:ring-ring/30",
           dragOver
             ? "border-primary/60 bg-primary/5"
             : uploading
             ? "border-border bg-accent/30 opacity-70 cursor-wait"
             : "border-border bg-card hover:border-primary/40 hover:bg-accent/20"
         )}
-        onClick={() => !uploading && inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
@@ -91,7 +91,7 @@ export function FileUpload({
             </p>
             {!uploading && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                ou cliquez pour parcourir — PDF, PNG, JPG, ZIP · 4 Mo max
+                ou cliquez pour parcourir — PDF, PNG, JPG, ZIP ·{"\u00a0"}4{"\u00a0"}Mo{"\u00a0"}max
               </p>
             )}
           </div>
@@ -103,16 +103,17 @@ export function FileUpload({
           multiple
           disabled={uploading}
           onChange={handleChange}
-          className="hidden"
+          className="sr-only"
           accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
+          aria-label="Déposer des documents"
         />
-      </div>
+      </label>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {/* File list */}
       {submissions.length > 0 && (
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-2xl border overflow-hidden">
           <div className="px-4 py-2 border-b bg-muted/50">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Fichiers envoyés ({submissions.length})

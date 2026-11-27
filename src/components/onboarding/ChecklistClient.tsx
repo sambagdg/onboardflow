@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Paperclip, Loader2, FileText } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { AlertCircle, Check, Paperclip, Loader2, FileText } from "lucide-react";
 import { toggleTaskByToken } from "@/app/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn, formatDueDate, isOverdue } from "@/lib/utils";
 import { uploadFile } from "@/lib/upload-client";
 import type { Submission, Task } from "@/types";
+
+gsap.registerPlugin(useGSAP);
 
 function TaskItem({
   task,
@@ -24,38 +28,62 @@ function TaskItem({
   disabled: boolean;
   uploading: boolean;
 }) {
+  // Statut de revue : Validé (verrouillé) > Envoyé (en attente de l'agence) > À refaire (refusé)
+  const isApproved = Boolean(task.approved_at);
+  const isSubmitted = task.completed && !isApproved;
+  const needsRedo = !task.completed && Boolean(task.review_note);
+
+  // Case + titre, partagés par les deux types (seul le conteneur change)
+  const header = (
+    <>
+      <Checkbox
+        checked={task.completed}
+        tabIndex={-1}
+        className={cn(
+          "mt-0.5 pointer-events-none",
+          isApproved && "data-checked:border-emerald-500 data-checked:bg-emerald-500 dark:data-checked:bg-emerald-500"
+        )}
+      />
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn(
+            "text-sm font-medium transition-colors",
+            task.completed ? "line-through text-muted-foreground" : "text-foreground"
+          )}
+        >
+          {task.title}
+        </p>
+        {task.description && (
+          <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div
       className={cn(
-        "rounded-lg border transition-all duration-200",
+        "rounded-xl border transition-all duration-200",
         task.completed
           ? "bg-accent/50 border-border/60"
           : "bg-card border-border hover:border-primary/40"
       )}
     >
       <div className="flex items-start gap-3 p-4">
-        {/* Cocher : seul ce bouton change l'état de la tâche */}
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onToggle(task.id, !task.completed)}
-          className="flex flex-1 min-w-0 items-start gap-3.5 text-left disabled:cursor-wait"
-        >
-          <Checkbox checked={task.completed} tabIndex={-1} className="mt-0.5 pointer-events-none" />
-          <div className="flex-1 min-w-0">
-            <p
-              className={cn(
-                "text-sm font-medium transition-colors",
-                task.completed ? "line-through text-muted-foreground" : "text-foreground"
-              )}
-            >
-              {task.title}
-            </p>
-            {task.description && (
-              <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
-            )}
-          </div>
-        </button>
+        {/* Action : le client coche. Document : la tâche se valide en joignant un fichier */}
+        {/* Validée par l'agence : plus rien à faire, la ligne n'est plus interactive */}
+        {task.kind === "action" && !isApproved ? (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onToggle(task.id, !task.completed)}
+            className="flex flex-1 min-w-0 items-start gap-3.5 text-left disabled:cursor-wait"
+          >
+            {header}
+          </button>
+        ) : (
+          <div className="flex flex-1 min-w-0 items-start gap-3.5">{header}</div>
+        )}
 
         {task.due_date && (
           <span
@@ -71,35 +99,55 @@ function TaskItem({
           </span>
         )}
 
-        {task.completed && (
-          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">
-            Fait
+        {(isApproved || isSubmitted || needsRedo) && (
+          <span
+            className={cn(
+              "text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 mt-0.5",
+              isApproved && "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+              isSubmitted && "text-primary bg-primary/10 border-primary/20",
+              needsRedo && "text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"
+            )}
+          >
+            {isApproved ? "Validé" : isSubmitted ? "Envoyé" : "À refaire"}
           </span>
         )}
 
         {/* Joindre : un <label> qui ouvre l'<input type="file"> (pas un bouton dans un bouton) */}
-        <label
-          title="Joindre un fichier"
-          className={cn(
-            "shrink-0 mt-0.5 rounded text-muted-foreground hover:text-primary focus-within:text-primary focus-within:ring-2 focus-within:ring-ring transition-colors",
-            uploading ? "cursor-wait" : "cursor-pointer"
-          )}
-        >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-          <input
-            type="file"
-            className="sr-only"
-            accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
-            disabled={uploading}
-            aria-label={`Joindre un fichier à « ${task.title} »`}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onAttach(task.id, file);
-              e.target.value = "";
-            }}
-          />
-        </label>
+        {task.kind === "document" && !isApproved && (
+          <label
+            title="Joindre un fichier"
+            className={cn(
+              "shrink-0 mt-0.5 rounded text-muted-foreground hover:text-primary focus-within:text-primary focus-within:ring-2 focus-within:ring-ring transition-colors",
+              uploading ? "cursor-wait" : "cursor-pointer"
+            )}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+            <input
+              type="file"
+              className="sr-only"
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
+              disabled={uploading}
+              aria-label={`Joindre un fichier à « ${task.title} »`}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onAttach(task.id, file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
       </div>
+
+      {/* Refus : le message de l'agence explique quoi corriger */}
+      {needsRedo && (
+        <p className="mx-4 mb-3 -mt-1 flex items-start gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+          <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+          <span>
+            <span className="font-semibold">Votre agence : </span>
+            {task.review_note}
+          </span>
+        </p>
+      )}
 
       {files.length > 0 && (
         <ul className="border-t px-4 py-2 flex flex-col gap-1">
@@ -140,18 +188,51 @@ export function ChecklistClient({
   const done = tasks.filter((t) => t.completed).length;
   const total = tasks.length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  const allDone = total > 0 && done === total;
+  const allApproved = total > 0 && tasks.every((t) => t.approved_at);
+
+  // Célébration discrète au moment où le client termine (pas si c'était déjà fini au chargement)
+  const root = useRef<HTMLDivElement>(null);
+  const wasDone = useRef(allDone);
+  useGSAP(
+    () => {
+      if (!allDone) {
+        wasDone.current = false;
+        return;
+      }
+      if (wasDone.current) return;
+      wasDone.current = true;
+
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap
+          .timeline()
+          .from("[data-done-banner]", { autoAlpha: 0, y: 12, scale: 0.98, duration: 0.7, ease: "expo.out" })
+          .from("[data-done-icon]", { scale: 0, rotate: -20, duration: 0.6, ease: "back.out(1.7)" }, "-=0.45");
+      });
+    },
+    { dependencies: [allDone], scope: root }
+  );
 
   function handleToggle(id: string, newCompleted: boolean) {
+    const previous = tasks.find((t) => t.id === id);
+    if (!previous) return;
+    setError(null);
+    // Comme le serveur : renvoyer la tâche efface le message de refus
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: newCompleted } : t))
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, completed: newCompleted, review_note: newCompleted ? null : t.review_note }
+          : t
+      )
     );
     startTransition(async () => {
       try {
         await toggleTaskByToken(token, id, newCompleted);
       } catch {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, completed: !newCompleted } : t))
-        );
+        // Refusé (ex : l'agence vient de la valider) : on remet la tâche telle qu'elle était
+        setTasks((prev) => prev.map((t) => (t.id === id ? previous : t)));
+        setError("Cette tâche n'a pas pu être modifiée. Rechargez la page pour voir son état à jour.");
       }
     });
   }
@@ -164,32 +245,61 @@ export function ChecklistClient({
       setError(result.error);
     } else {
       setFiles((prev) => [result.submission, ...prev]);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)));
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, completed: true, review_note: null } : t))
+      );
     }
     setUploadingTaskId(null);
   }
 
   if (total === 0) {
     return (
-      <div className="rounded-lg border border-dashed py-10 text-center">
+      <div className="rounded-2xl border border-dashed py-10 text-center">
         <p className="text-sm text-muted-foreground">Aucune tâche définie pour cet espace.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Progress summary */}
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
+    <div ref={root} className="flex flex-col gap-4">
+      {/* Progression : seule source de vérité côté client, elle suit chaque coche et chaque fichier */}
+      <div className="rounded-2xl border bg-card p-5">
+        <div className="mb-3 flex items-baseline justify-between">
           <span className="text-sm text-muted-foreground">
-            {done === total
-              ? "Tout est complété !"
+            {allDone
+              ? "Tout est complété"
               : `${total - done} tâche${total - done !== 1 ? "s" : ""} restante${total - done !== 1 ? "s" : ""}`}
           </span>
-          <span className="text-sm font-semibold text-primary tabular-nums">{percent}%</span>
+          <span className="text-2xl font-semibold tabular-nums tracking-[-0.03em]">{percent}%</span>
         </div>
-        <Progress value={percent} className="w-full" />
+        <Progress value={percent} className="h-2 w-full" />
+      </div>
+
+      {/* role="status" : la fin est aussi annoncée aux lecteurs d'écran */}
+      <div role="status">
+        {allDone && (
+          <div
+            data-done-banner
+            className="flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5"
+          >
+            <div
+              data-done-icon
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white"
+            >
+              <Check className="h-5 w-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400">
+                {allApproved ? "Dossier validé, merci !" : "Tout est complété, merci !"}
+              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {allApproved
+                  ? "Votre agence a validé l'ensemble de vos éléments."
+                  : "Votre agence va maintenant vérifier vos éléments."}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
