@@ -5,7 +5,6 @@ import { logout } from "@/app/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerClient();
@@ -14,51 +13,36 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
 
   /* Initiales pour l'avatar */
-  const initials = user.email
-    ? user.email.slice(0, 2).toUpperCase()
-    : "?";
+  const initials = user.email ? user.email.slice(0, 2).toUpperCase() : "?";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header principal */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-b">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">
-          {/* Logo */}
-          <Link href="/dashboard" className="font-bold text-base tracking-tight">
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Matériau translucide : le contenu défile dessous, la barre reste lisible */}
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-xl backdrop-saturate-150 supports-backdrop-filter:bg-background/70">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+          <Link href="/dashboard" className="text-[17px] font-semibold tracking-tight">
             OnboardFlow
           </Link>
 
-          <Separator orientation="vertical" className="h-5" />
-
-          {/* Navigation */}
-          <nav className="hidden sm:flex items-center gap-1">
+          <nav className="hidden items-center sm:flex">
             <Link
               href="/dashboard"
-              className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               Clients
             </Link>
           </nav>
 
-          {/* Actions à droite */}
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-
-            {/* Email affiché sur desktop */}
-            <span className="hidden md:block text-xs text-muted-foreground">
-              {user.email}
-            </span>
-
-            {/* Avatar avec initiales */}
+            <span className="hidden text-xs text-muted-foreground md:block">{user.email}</span>
             <Avatar className="h-7 w-7">
-              <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
+              <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
-
-            {/* Bouton déconnexion */}
             <form action={logout}>
-              <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
+              <Button type="submit" variant="ghost" size="sm" className="rounded-full text-muted-foreground">
                 Déconnexion
               </Button>
             </form>
@@ -66,10 +50,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </header>
 
-      {/* Contenu principal */}
-      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
-        {children}
-      </main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
     </div>
   );
 }

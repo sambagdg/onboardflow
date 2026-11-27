@@ -1,13 +1,10 @@
 import Link from "next/link";
+import { AlertCircle } from "lucide-react";
 import { login } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -15,61 +12,57 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const { error } = await searchParams;
 
   return (
-    <Card className="shadow-md">
-      <CardHeader className="text-center pb-2">
-        <CardTitle className="text-2xl">Connexion</CardTitle>
-        <CardDescription>Accédez à votre espace agence</CardDescription>
-      </CardHeader>
+    <div className="flex flex-col gap-8">
+      <div data-reveal>
+        <h1 className="mb-2 text-3xl font-semibold tracking-[-0.03em]">Bon retour.</h1>
+        <p className="text-[15px] text-muted-foreground">Connectez-vous pour retrouver vos espaces clients.</p>
+      </div>
 
-      <CardContent className="flex flex-col gap-5">
-        {/* Erreur serveur */}
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {decodeURIComponent(error as string)}
-            </AlertDescription>
-          </Alert>
-        )}
+      {error && (
+        <Alert variant="destructive" data-reveal>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{decodeURIComponent(error as string)}</AlertDescription>
+        </Alert>
+      )}
 
-        <form action={login} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              name="email"
-              placeholder="vous@agence.com"
-              required
-              autoComplete="email"
-            />
-          </div>
+      <form action={login} data-reveal className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            name="email"
+            placeholder="vous@agence.com"
+            required
+            autoComplete="email"
+            className="h-10"
+          />
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              name="password"
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Mot de passe</Label>
+          <Input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            required
+            autoComplete="current-password"
+            className="h-10"
+          />
+        </div>
 
-          {/* Button natif shadcn — pas besoin d'asChild pour les submit */}
-          <Button type="submit" className="w-full mt-1">
-            Se connecter
-          </Button>
-        </form>
+        <Button type="submit" className="mt-2 h-10 w-full rounded-full">
+          Se connecter
+        </Button>
+      </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Pas encore de compte ?{" "}
-          <Link href="/register" className={cn(buttonVariants({ variant: "link" }), "p-0 h-auto text-sm")}>
-            Créer un compte
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+      <p data-reveal className="text-center text-sm text-muted-foreground">
+        Pas encore de compte ?{" "}
+        <Link href="/register" className="font-medium text-foreground underline-offset-4 hover:underline">
+          Créer un compte
+        </Link>
+      </p>
+    </div>
   );
 }

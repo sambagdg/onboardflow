@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Paperclip, Loader2, FileText } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Check, Paperclip, Loader2, FileText } from "lucide-react";
 import { toggleTaskByToken } from "@/app/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn, formatDueDate, isOverdue } from "@/lib/utils";
 import { uploadFile } from "@/lib/upload-client";
 import type { Submission, Task } from "@/types";
+
+gsap.registerPlugin(useGSAP);
 
 function TaskItem({
   task,
@@ -47,7 +51,7 @@ function TaskItem({
   return (
     <div
       className={cn(
-        "rounded-lg border transition-all duration-200",
+        "rounded-xl border transition-all duration-200",
         task.completed
           ? "bg-accent/50 border-border/60"
           : "bg-card border-border hover:border-primary/40"
@@ -153,6 +157,30 @@ export function ChecklistClient({
   const done = tasks.filter((t) => t.completed).length;
   const total = tasks.length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  const allDone = total > 0 && done === total;
+
+  // Célébration discrète au moment où le client termine (pas si c'était déjà fini au chargement)
+  const root = useRef<HTMLDivElement>(null);
+  const wasDone = useRef(allDone);
+  useGSAP(
+    () => {
+      if (!allDone) {
+        wasDone.current = false;
+        return;
+      }
+      if (wasDone.current) return;
+      wasDone.current = true;
+
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap
+          .timeline()
+          .from("[data-done-banner]", { autoAlpha: 0, y: 12, scale: 0.98, duration: 0.7, ease: "expo.out" })
+          .from("[data-done-icon]", { scale: 0, rotate: -20, duration: 0.6, ease: "back.out(1.7)" }, "-=0.45");
+      });
+    },
+    { dependencies: [allDone], scope: root }
+  );
 
   function handleToggle(id: string, newCompleted: boolean) {
     setTasks((prev) =>
@@ -184,25 +212,48 @@ export function ChecklistClient({
 
   if (total === 0) {
     return (
-      <div className="rounded-lg border border-dashed py-10 text-center">
+      <div className="rounded-2xl border border-dashed py-10 text-center">
         <p className="text-sm text-muted-foreground">Aucune tâche définie pour cet espace.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Progress summary */}
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
+    <div ref={root} className="flex flex-col gap-4">
+      {/* Progression : seule source de vérité côté client, elle suit chaque coche et chaque fichier */}
+      <div className="rounded-2xl border bg-card p-5">
+        <div className="mb-3 flex items-baseline justify-between">
           <span className="text-sm text-muted-foreground">
-            {done === total
-              ? "Tout est complété !"
+            {allDone
+              ? "Tout est complété"
               : `${total - done} tâche${total - done !== 1 ? "s" : ""} restante${total - done !== 1 ? "s" : ""}`}
           </span>
-          <span className="text-sm font-semibold text-primary tabular-nums">{percent}%</span>
+          <span className="text-2xl font-semibold tabular-nums tracking-[-0.03em]">{percent}%</span>
         </div>
-        <Progress value={percent} className="w-full" />
+        <Progress value={percent} className="h-2 w-full" />
+      </div>
+
+      {/* role="status" : la fin est aussi annoncée aux lecteurs d'écran */}
+      <div role="status">
+        {allDone && (
+          <div
+            data-done-banner
+            className="flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5"
+          >
+            <div
+              data-done-icon
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white"
+            >
+              <Check className="h-5 w-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400">Tout est complété, merci !</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Votre agence va maintenant traiter votre dossier.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
