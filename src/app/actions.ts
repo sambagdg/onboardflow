@@ -116,6 +116,17 @@ export async function toggleTaskByToken(
   if (!project) throw new Error("Lien invalide");
 
   // Le client admin ignore les RLS : on limite nous-mêmes aux tâches de ce projet
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("kind")
+    .eq("id", taskId)
+    .eq("project_id", project.id)
+    .maybeSingle();
+
+  if (!task) throw new Error("Tâche introuvable");
+  // Une tâche "document" se valide uniquement en joignant un fichier
+  if (task.kind === "document") throw new Error("Cette tâche se valide en joignant un fichier");
+
   const { error } = await supabase
     .from("tasks")
     .update({ completed })
@@ -132,6 +143,7 @@ export async function addTask(formData: FormData) {
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
   const dueDate = formData.get("dueDate") as string;
+  const kind = formData.get("kind") === "document" ? "document" : "action";
 
   if (!projectId || !title) return;
 
@@ -156,6 +168,7 @@ export async function addTask(formData: FormData) {
     title,
     description: description || null,
     due_date: dueDate || null,
+    kind,
     position: (last?.position ?? -1) + 1,
   });
 
@@ -168,6 +181,7 @@ export async function updateTask(formData: FormData) {
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
   const dueDate = formData.get("dueDate") as string;
+  const kind = formData.get("kind") === "document" ? "document" : "action";
 
   if (!taskId || !projectId || !title) return;
 
@@ -182,7 +196,7 @@ export async function updateTask(formData: FormData) {
   // la tâche appartient à un projet de cette agence
   await supabase
     .from("tasks")
-    .update({ title, description: description || null, due_date: dueDate || null })
+    .update({ title, description: description || null, due_date: dueDate || null, kind })
     .eq("id", taskId)
     .eq("project_id", projectId);
 

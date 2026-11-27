@@ -57,13 +57,16 @@ export async function POST(request: Request) {
     }
     const { data: task } = await supabase
       .from("tasks")
-      .select("id")
+      .select("kind")
       .eq("id", taskId)
       .eq("project_id", project.id)
       .maybeSingle();
 
     if (!task) {
       return NextResponse.json({ error: "Tâche invalide" }, { status: 400 });
+    }
+    if (task.kind !== "document") {
+      return NextResponse.json({ error: "Cette tâche n'attend pas de fichier" }, { status: 400 });
     }
   }
 

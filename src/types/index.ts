@@ -5,6 +5,7 @@ export interface Task {
   description?: string;
   due_date?: string | null; // "AAAA-MM-JJ"
   completed: boolean;
+  kind: "action" | "document";
   position: number;
   created_at: string;
 }

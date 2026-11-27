@@ -59,6 +59,19 @@ export function AddTaskForm({ projectId }: { projectId: string }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
+        <Label htmlFor="task-kind">Type</Label>
+        <select
+          id="task-kind"
+          name="kind"
+          defaultValue="action"
+          className="h-9 w-fit rounded-md border border-input bg-transparent px-3 text-sm"
+        >
+          <option value="action">Action à cocher</option>
+          <option value="document">Document à joindre</option>
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="task-due">
           Date limite{" "}
           <span className="font-normal text-muted-foreground">(optionnel)</span>

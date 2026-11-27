@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2, Check, Pencil, ChevronUp, ChevronDown } from "lucide-react";
+import { Trash2, Check, Pencil, ChevronUp, ChevronDown, FileText } from "lucide-react";
 import { deleteTask, updateTask, moveTask } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,15 @@ export function TaskRow({
             aria-label="Date limite"
             className="w-fit"
           />
+          <select
+            name="kind"
+            defaultValue={task.kind}
+            aria-label="Type"
+            className="h-9 w-fit rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="action">Action à cocher</option>
+            <option value="document">Document à joindre</option>
+          </select>
           <div className="flex gap-2">
             <Button type="submit" size="sm">
               Enregistrer
@@ -94,6 +103,12 @@ export function TaskRow({
           )}
         >
           {task.title}
+          {task.kind === "document" && (
+            <FileText
+              className="inline h-3.5 w-3.5 ml-1.5 -mt-0.5 text-muted-foreground"
+              aria-label="Document à joindre"
+            />
+          )}
         </p>
         {task.description && (
           <p className="text-xs text-muted-foreground mt-0.5">

@@ -24,6 +24,26 @@ function TaskItem({
   disabled: boolean;
   uploading: boolean;
 }) {
+  // Case + titre, partagés par les deux types (seul le conteneur change)
+  const header = (
+    <>
+      <Checkbox checked={task.completed} tabIndex={-1} className="mt-0.5 pointer-events-none" />
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn(
+            "text-sm font-medium transition-colors",
+            task.completed ? "line-through text-muted-foreground" : "text-foreground"
+          )}
+        >
+          {task.title}
+        </p>
+        {task.description && (
+          <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div
       className={cn(
@@ -34,28 +54,19 @@ function TaskItem({
       )}
     >
       <div className="flex items-start gap-3 p-4">
-        {/* Cocher : seul ce bouton change l'état de la tâche */}
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onToggle(task.id, !task.completed)}
-          className="flex flex-1 min-w-0 items-start gap-3.5 text-left disabled:cursor-wait"
-        >
-          <Checkbox checked={task.completed} tabIndex={-1} className="mt-0.5 pointer-events-none" />
-          <div className="flex-1 min-w-0">
-            <p
-              className={cn(
-                "text-sm font-medium transition-colors",
-                task.completed ? "line-through text-muted-foreground" : "text-foreground"
-              )}
-            >
-              {task.title}
-            </p>
-            {task.description && (
-              <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
-            )}
-          </div>
-        </button>
+        {/* Action : le client coche. Document : la tâche se valide en joignant un fichier */}
+        {task.kind === "action" ? (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onToggle(task.id, !task.completed)}
+            className="flex flex-1 min-w-0 items-start gap-3.5 text-left disabled:cursor-wait"
+          >
+            {header}
+          </button>
+        ) : (
+          <div className="flex flex-1 min-w-0 items-start gap-3.5">{header}</div>
+        )}
 
         {task.due_date && (
           <span
@@ -78,27 +89,29 @@ function TaskItem({
         )}
 
         {/* Joindre : un <label> qui ouvre l'<input type="file"> (pas un bouton dans un bouton) */}
-        <label
-          title="Joindre un fichier"
-          className={cn(
-            "shrink-0 mt-0.5 rounded text-muted-foreground hover:text-primary focus-within:text-primary focus-within:ring-2 focus-within:ring-ring transition-colors",
-            uploading ? "cursor-wait" : "cursor-pointer"
-          )}
-        >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-          <input
-            type="file"
-            className="sr-only"
-            accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
-            disabled={uploading}
-            aria-label={`Joindre un fichier à « ${task.title} »`}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onAttach(task.id, file);
-              e.target.value = "";
-            }}
-          />
-        </label>
+        {task.kind === "document" && (
+          <label
+            title="Joindre un fichier"
+            className={cn(
+              "shrink-0 mt-0.5 rounded text-muted-foreground hover:text-primary focus-within:text-primary focus-within:ring-2 focus-within:ring-ring transition-colors",
+              uploading ? "cursor-wait" : "cursor-pointer"
+            )}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+            <input
+              type="file"
+              className="sr-only"
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.zip"
+              disabled={uploading}
+              aria-label={`Joindre un fichier à « ${task.title} »`}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onAttach(task.id, file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
       </div>
 
       {files.length > 0 && (
